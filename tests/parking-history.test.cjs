@@ -218,22 +218,23 @@ test('errors propagate; failed sampling does not create a zero-shaped fallback',
   await assert.rejects(h.handle(COLLECT), /Source failed/);
   assert.equal(h.records.size, 0);
   await assert.rejects(harness({ writeError: true }).handle(COLLECT), /Write failed/);
-  await assert.rejects(harness({ readError: true }).query('2026-10-26'), /Read failed/);
+  await assert.rejects(harness({ readError: true }).query('2026-10-25'), /Read failed/);
   const brokenCleanup = harness({ removeError: true });
   brokenCleanup.records.set('old', { _id: 'old', date: '2026-10-01' });
   await assert.rejects(brokenCleanup.handle(CLEANUP), /Remove failed/);
 });
 
-test('history includes D-7, rejects malformed/out-of-range dates, and is strictly read-only', async () => {
+test('history allows exactly D-7 through D-1, rejects today and all other dates, and is strictly read-only', async () => {
   const h = harness();
-  for (const date of ['2026-10-19', '2026-10-26']) {
+  for (const date of ['2026-10-19', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23', '2026-10-24', '2026-10-25']) {
     const history = await h.query(date);
     assert.deepEqual(history.samples, []);
     assert.equal(history.earliest, '2026-10-19');
+    assert.equal(history.latest, '2026-10-25');
     assert.equal(history.timezone, 'Asia/Shanghai');
     assert.deepEqual(history.windows, config.windows);
   }
-  for (const date of ['2026-10-18', '2026-10-27', '2026-02-30', {}, null, '2026-1-1']) {
+  for (const date of ['2026-10-18', '2026-10-26', '2026-10-27', '2026-02-30', {}, null, '2026-1-1']) {
     await assert.rejects(h.query(date), /outside/);
   }
   assert.equal(h.requests, 0);
@@ -242,12 +243,45 @@ test('history includes D-7, rejects malformed/out-of-range dates, and is strictl
   assert.equal(h.workdayChecks.length, 0);
 });
 
+test('longer physical retention cannot expand the seven-day public query window', async () => {
+  const h = harness({ config: { retentionDays: 31 } });
+  h.records.set('old', { _id: 'old', date: '2026-10-18', minute: 540, b25: 1, zhongmeng: 2 });
+  await assert.rejects(h.query('2026-10-18'), /outside/);
+  await assert.rejects(h.query('2026-10-26'), /outside/);
+  assert.equal(h.reads.length, 0);
+  assert.equal((await h.query('2026-10-19')).earliest, '2026-10-19');
+});
+
+test('today is still collected for tomorrow, but cannot be read as a completed historical day', async () => {
+  const h = harness();
+  await h.handle(COLLECT);
+  await assert.rejects(h.query('2026-10-26'), /today excluded/);
+  h.setTime('2026-10-27T00:00:00');
+  const result = await h.query('2026-10-26');
+  assert.equal(result.latest, '2026-10-26');
+  assert.equal(result.samples.length, 1);
+  assert.equal(result.samples[0].b25, 0);
+});
+
+test('complete-day query bounds rotate at Shanghai midnight across year and leap-day boundaries', async () => {
+  const h = harness({ at: '2027-01-01T00:00:00' });
+  const year = await h.query('2026-12-31');
+  assert.equal(year.earliest, '2026-12-25');
+  assert.equal(year.latest, '2026-12-31');
+  await assert.rejects(h.query('2027-01-01'), /outside/);
+  h.setTime('2028-03-01T00:00:00');
+  const leap = await h.query('2028-02-29');
+  assert.equal(leap.earliest, '2028-02-23');
+  assert.equal(leap.latest, '2028-02-29');
+  await assert.rejects(h.query('2028-02-22'), /outside/);
+});
+
 test('history paginates past 100 records and excludes internal database IDs', async () => {
   const h = harness();
   for (let minute = 0; minute < 1440; minute += 5) {
-    h.records.set(String(minute), { _id: String(minute), date: '2026-10-26', minute, b25: minute, zhongmeng: 0 });
+    h.records.set(String(minute), { _id: String(minute), date: '2026-10-25', minute, b25: minute, zhongmeng: 0 });
   }
-  const history = await h.query('2026-10-26');
+  const history = await h.query('2026-10-25');
   assert.equal(history.samples.length, 288);
   assert.equal(history.samples[287].minute, 1435);
   assert.equal('_id' in history.samples[0], false);

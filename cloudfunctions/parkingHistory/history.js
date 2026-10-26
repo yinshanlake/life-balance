@@ -66,9 +66,10 @@ function createHandler({ db, config, fetchSpaces, isWorkday, clock = Date.now })
     }
     if (event.action !== 'history') throw new Error('Unknown parking history action');
     const date = event.data && event.data.date;
-    const earliest = localTime(now - (config.retentionDays - 1) * DAY).date;
-    if (!isDate(date) || date < earliest || date > current.date) {
-      throw new Error('Date is outside parking history retention');
+    const earliest = localTime(now - 7 * DAY).date;
+    const latest = localTime(now - DAY).date;
+    if (!isDate(date) || date < earliest || date > latest) {
+      throw new Error('Date is outside the last seven complete days (today excluded)');
     }
     const samples = [];
     for (let offset = 0; offset < 300; offset += 100) {
@@ -81,7 +82,7 @@ function createHandler({ db, config, fetchSpaces, isWorkday, clock = Date.now })
       if (data.length < 100) break;
     }
     return {
-      date, today: current.date, earliest,
+      date, today: current.date, earliest, latest,
       timezone: 'Asia/Shanghai',
       windows: config.windows,
       samples

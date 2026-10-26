@@ -1,40 +1,68 @@
 <toolbar isBack="{{true}}" bgColor="bg-white"></toolbar>
-<view class="history-page">
-  <view class="history-title">停车位历史趋势</view>
-  <view class="history-note">北京时间 · 可切换日期 · 仅展示实际采样</view>
-  <view class="history-controls">
-    <button size="mini" data-lot="b25" bindtap="onLotChange" class="{{lot === 'b25' ? 'active' : ''}}">B25</button>
-    <button size="mini" data-lot="zhongmeng" bindtap="onLotChange" class="{{lot === 'zhongmeng' ? 'active' : ''}}">中盟</button>
+<view class="peak-page">
+  <view class="peak-title">高峰车位回顾</view>
+  <view class="peak-subtitle">近7个完整自然日 · 仅早晚高峰</view>
+  <view class="peak-filters">
+    <view class="lot-switch" role="tablist" aria-label="停车场">
+      <view class="lot-option {{lot === 'b25' ? 'selected' : ''}}" data-lot="b25" bindtap="onLotChange" role="tab" aria-selected="{{lot === 'b25'}}">B25</view>
+      <view class="lot-option {{lot === 'zhongmeng' ? 'selected' : ''}}" data-lot="zhongmeng" bindtap="onLotChange" role="tab" aria-selected="{{lot === 'zhongmeng'}}">中盟</view>
+    </view>
+    <view class="date-row">
+      <picker mode="selector" range="{{reviewDates}}" range-key="label" value="{{dateIndex}}" bindchange="onDateChange" class="date-picker">
+        <view class="date-label">{{dateLabel}}<view class="date-chevron"></view></view>
+      </picker>
+      <view class="quick-date" bindtap="onRangeShortcut" role="button">{{quickDateLabel}}</view>
+    </view>
   </view>
-  <view class="history-controls">
-    <picker mode="date" value="{{date}}" start="{{earliest}}" end="{{today}}" bindchange="onDateChange">
-      <view class="date-picker">{{date}} ▾</view>
-    </picker>
-    <button size="mini" bindtap="onLastWeek">上周此日</button>
+
+  <view wx:if="{{error}}" class="peak-error">
+    <view class="state-title">{{error}}</view>
+    <view class="state-detail">未加载成功，不表示当天没有记录。</view>
+    <view class="retry-action" bindtap="loadHistory" role="button">重新加载</view>
   </view>
-  <view wx:if="{{loading}}" class="history-state">正在加载历史数据…</view>
-  <view wx:elif="{{error}}" class="history-state">
-    <view>{{error}}</view>
-    <button size="mini" bindtap="loadHistory">重试</button>
-  </view>
-  <block wx:else>
-    <view wx:if="{{!hasPoints}}" class="history-state">这一天尚无采样。非工作日自动跳过，调休补班日照常采集；仅在配置的早晚高峰采集。采集未启用或日历不可用也可能造成空缺。</view>
-    <block wx:else>
-      <view class="history-note">纵轴：剩余车位（个） · 横轴：时间</view>
-      <canvas id="history-chart" canvas-id="history-chart" class="history-chart"></canvas>
-      <view class="history-note">虚线标记当前北京时间；缺失采样不连线。</view>
-      <view class="history-summary">所选日期当前时段：{{sameTimeText}}</view>
-      <view class="history-title-small">余量热力条（点击查看）</view>
-      <block wx:for="{{heatGroups}}" wx:key="name" wx:for-item="group">
-        <view class="history-note">{{group.label}} {{group.startLabel}}–{{group.endLabel}}<text wx:if="{{group.intervalMinutes}}"> · 每{{group.intervalMinutes}}分钟</text></view>
-        <view class="heat-strip">
-          <view wx:for="{{group.cells}}" wx:key="minute" class="heat-cell" style="background: {{item.color}}" data-index="{{item.index}}" bindtap="onCellTap"></view>
-        </view>
-      </block>
-      <view class="history-note">蓝色：大于20 · 黄色：1–20 · 红色：0 · 灰色：未采样</view>
-      <view class="history-summary">{{selectedCell}}</view>
-      <view class="history-note">共 {{sampleCount}} 条实际记录；两段之间不采集，不将其当作漏采。</view>
-    </block>
+  <block wx:elif="{{loading}}">
+    <view wx:for="{{['早高峰', '晚高峰']}}" wx:key="*this" class="peak-card loading-card bg-home-card" aria-label="加载中">
+      <view class="period-name">{{item}}</view>
+      <view class="loading-line loading-short"></view>
+      <view class="loading-line loading-wide"></view>
+      <view class="loading-note">正在读取时段记录</view>
+    </view>
   </block>
-  <view class="history-note">法定假期与调休工作日自动识别。仅早晚高峰采集，上线前的历史无法补回。此页面不是实时车位查询。</view>
+  <block wx:else>
+    <view wx:for="{{periods}}" wx:key="name" class="peak-card bg-home-card">
+      <view class="period-header">
+        <view class="period-name">{{item.label}}</view>
+        <view class="period-window">{{item.startLabel}}–{{item.endLabel}}</view>
+      </view>
+      <view class="period-metrics">
+        <view class="metric-main">
+          <view class="metric-label">最低记录</view>
+          <view class="metric-value {{item.minimumTone}}">{{item.minimumText}}<text wx:if="{{item.hasPoints}}" class="metric-unit">个余位</text></view>
+          <view class="metric-time">{{item.minimumTime || '暂无采样'}}</view>
+        </view>
+        <view class="metric-secondary">
+          <view class="metric-label">末次记录</view>
+          <view class="metric-value">{{item.lastText}}<text wx:if="{{item.hasPoints}}" class="metric-unit">个余位</text></view>
+          <view class="metric-time">{{item.lastTime || '—'}}</view>
+        </view>
+      </view>
+      <canvas wx:if="{{item.hasPoints}}" id="chart-{{item.name}}" canvas-id="chart-{{item.name}}" class="peak-chart" data-period="{{item.name}}" bindtouchstart="onChartTouch" bindtouchmove="onChartTouch" disable-scroll="{{true}}" aria-label="{{item.label}}剩余车位曲线，{{item.startLabel}}至{{item.endLabel}}"></canvas>
+      <view wx:else class="period-empty">
+        <view class="state-title">{{item.emptyTitle}}</view>
+        <view class="state-detail">{{item.emptyDetail}}</view>
+      </view>
+      <view class="period-footer">
+        <view class="inspection">{{item.inspection || item.recordLabel}}</view>
+        <view class="period-cadence">{{item.cadenceLabel}}</view>
+      </view>
+      <view wx:if="{{item.hasPoints}}" class="chart-hint">点按曲线查看采样 · 缺失记录不连线</view>
+    </view>
+  </block>
+
+  <view class="peak-scope">
+    <view>北京时间 · 仅工作日采样（含调休补班）</view>
+    <view>仅看昨天至7天前，不含今天；今天采集的数据将在次日纳入回顾。</view>
+    <view>只覆盖早晚两段，不是全天历史；无记录不等于 0，记录不代表实时余位。</view>
+    <view wx:if="{{outsideWindowCount}}">另有 {{outsideWindowCount}} 条窗口外历史记录，本页不展示。</view>
+  </view>
 </view>
