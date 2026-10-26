@@ -1,30 +1,51 @@
-/**app.wxss**/
-@import 'colorui/main.wxss';
-@import 'colorui/icon.wxss';
+@import "colorui/main.wxss";
+@import "colorui/icon.wxss";
 @import "colorui/animation.wxss";
+@import "styles/tailwind.wxss";
 
-.container {
+page {
+  background: #f9f9f9;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  box-sizing: border-box;
-} 
+  justify-content: flex-start;
 
-.flex-1 {
-  flex: 1;
+  /* Theme */
+  --primary: #181853;
+  --foreground: #1c1c55;
+  --secondary: #8f97fd;
+  --lightBlue: #ecf4ff;
+  --inset: 40rpx;
+  --textGrey: #aaaaaa;
+  --blue: #4f85d8;
+  --buttonBlue: #f6f8ff;
+  --purpleLight: #b8b8d7;
+  --gray: #acacac;
+  --grayLight: #e9e9e9;
+  --blueBg: #3785fc;
 }
 
-
-button {
-  background: initial;
+.bg-buttonBlue {
+  background: var(--buttonBlue);
 }
 
-button:focus{
-  outline: 0;
+.bg-gray {
+  background: var(--gray);
 }
 
-button::after{
-  border: none;
+.bg-blueBg {
+  background-color: var(--blueBg);
+}
+
+.bg-purpleLight {
+  background: var(--purpleLight);
+}
+
+.bg-foreground {
+  background: var(--foreground);
+}
+
+.bg-blue-gradient {
+  background: linear-gradient(33.14deg, #ffffff 0.76%, #f8fbff 100%);
 }
 
 .bg-primary {
@@ -32,12 +53,48 @@ button::after{
   color: white;
 }
 
+.bg-blue {
+  background-color: var(--blue);
+}
+
 .text-primary {
   color: var(--primary);
 }
 
+.text-gray {
+  color: var(--gray);
+}
+
+.text-purpleLight {
+  color: var(--purpleLight);
+}
+
+.text-foreground {
+  color: var(--foreground);
+}
+
 .text-secondary {
   color: var(--secondary);
+}
+
+.text-blue {
+  color: var(--blue);
+}
+
+.border-purple-light {
+  border: 1rpx solid var(--purpleLight);
+}
+
+.border-primary {
+  border: 1rpx solid var(--primary);
+}
+
+.border-foreground {
+  border: 1rpx solid var(--foreground);
+}
+
+.border-gray-light {
+  border: 1rpx solid var(--grayLight);
 }
 
 .plr {
@@ -56,6 +113,41 @@ button::after{
   justify-content: center;
 }
 
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.gradient-bg {
+  background: linear-gradient(180deg, #fffefe 0%, #f9f6ff 100%);
+}
+
+.appbar {
+  position: fixed;
+  width: 100%;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+button {
+  background: initial;
+}
+
+button:focus {
+  outline: 0;
+}
+
+button::after {
+  border: none;
+}
+
 .single-line {
   text-overflow: -o-ellipsis-lastline;
   overflow: hidden;
@@ -68,9 +160,15 @@ button::after{
 
 .shine {
   background: #f6f7f8;
-  background-image: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+  background-image: linear-gradient(
+    to right,
+    #f6f7f8 0%,
+    #edeef1 20%,
+    #f6f7f8 40%,
+    #f6f7f8 100%
+  );
   background-repeat: no-repeat;
-  background-size: 800px 104px;
+  background-size: 800px 140px;
   display: inline-block;
   position: relative;
   border-radius: 12rpx;
@@ -84,12 +182,40 @@ button::after{
 
 .shine-grey {
   background: #f1f1f1;
-  background-image: linear-gradient(to right, #eeeeee 0%, #edeef1 20%, #eeeeee 40%, #eef4fa 100%);
+  background-image: linear-gradient(
+    to right,
+    #eeeeee 0%,
+    #edeef1 20%,
+    #eeeeee 40%,
+    #eef4fa 100%
+  );
   background-repeat: no-repeat;
   background-size: 800px 104px;
   display: inline-block;
   position: relative;
   border-radius: 12rpx;
+
+  animation-duration: 1s;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+  animation-name: placeholderShimmer;
+  animation-timing-function: linear;
+}
+
+.shine-home-card {
+  background: #f6f7f8;
+  background-image: linear-gradient(
+    to right,
+    #f6f7f8 0%,
+    #edeef1 20%,
+    #f6f7f8 40%,
+    #f6f7f8 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 800px 140px;
+  display: inline-block;
+  position: relative;
+  border-radius: 0.75rem;
 
   animation-duration: 1s;
   animation-fill-mode: forwards;
@@ -108,16 +234,6 @@ button::after{
   }
 }
 
-page {
-  background: #f9f9f9;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-
-  /* Theme */
-  --primary: #181853;
-  --secondary: #8F97FD;
-  --lightBlue: #ECF4FF;
-  --inset: 40rpx;
-  --textGrey: #aaaaaa;
+.bg-home-card {
+  background: linear-gradient(102.61deg, #f2f5fe 7.34%, #f4f6f8 94.6%);
 }

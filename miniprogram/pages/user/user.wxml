@@ -1,97 +1,165 @@
-<view class="base-info-container">
-
-  <view class="flex justify-between align-center">
-    <view class="flex align-center">
-      <image class="avatar" src="{{userInfo.avatarUrl}}"></image>
-      <view class="margin-left">
-        <view class="name">{{userInfo.nickName}}</view>
-
-        <view bindtap="onCopyId" class="flex align-center margin-top-xs">
-          <view class="id-text">ID: {{userInfo.id}}</view>
-          <view class="id-copy margin-left-sm">copy</view>
+<view class="main">
+  <view class="flex justify-between items-center">
+    <view class="flex items-center">
+      <image bind:tap="onProfileClick" class="avatar rounded-full w-16 h-16" src="{{ userInfo.avatarUrl }}" mode="aspectFill" />
+      <view class="ml-4">
+        <view class="text-foreground font-semibold truncate text-lg">{{userInfo.nickName}}</view>
+        <view wx:if="{{userInfo.company}}" class="profile-company mt-1 flex items-center gap-1">
+          <image src="/images/ic_msft.svg" class="w-4 h-4" />
+          {{company.name}}
+        </view>
+        <view bind:tap="onSettingCompanyClick" wx:if="{{!userInfo.company}}" class="text-xs bg-blue-500 text-white rounded px-2 py-1">
+          Verify Your Company
         </view>
       </view>
     </view>
-    <image src="../../images/ic_edit.png" bindtap="onEditUserInfoClick" class="edit-info margin-top-xs"></image>
+    <image src="/images/ic_edit.png" bind:tap="onEditUserInfoClick" class="w-6 h-6" />
   </view>
-
-  <view wx:if="{{userInfo.company}}" class="profile-company margin-top">{{company.name}}</view>
-  <view bindtap="onSettingCompanyClick" wx:if="{{!userInfo.company}}" class="profile-company-unset margin-top">
-    Verify your
-    company
-  </view>
-
-  <view style="margin-top: 60rpx" class="flex">
-
-    <view bindtap="onActivityClick" class="activity-container">
-      <image class="collection-icon" src="../../images/ic_activity_2.png"></image>
-      <view class="collection-title margin-left">Activities</view>
+  <view class="mt-10 bg-white rounded-2xl">
+    <view class="flex flex-col">
+      <view bind:tap="onProfileClick" class="flex items-center justify-between px-6 py-6">
+        <view class="flex items-center gap-4">
+          <view class="flex items-center justify-center bg-white rounded-full">
+            <image class="w-5 h-5" src="../../images/ic_user_profile.svg" />
+          </view>
+          <view class="text-title">Profile</view>
+        </view>
+        <image class="w-4 h-4" src="../../images/ic_arrow_right.svg" />
+      </view>
+      <view bind:tap="onActivityClick" class="flex items-center justify-between px-6 py-6 gap-6">
+        <view class="flex items-center gap-4">
+          <view class="flex items-center justify-center bg-white rounded-full">
+            <image class="w-5 h-5" src="../../images/ic_user_activity.svg" />
+          </view>
+          <view class="text-title">Activities</view>
+        </view>
+        <image class="w-4 h-4" src="../../images/ic_arrow_right.svg" />
+      </view>
+      <view bind:tap="onMallClick" class="flex items-center justify-between px-6 py-6 gap-6">
+        <view class="flex items-center gap-4">
+          <view class="flex items-center justify-center bg-white rounded-full">
+            <image class="w-5 h-5" src="../../images/ic_user_mall.svg" />
+          </view>
+          <view class="text-title">Flea market products</view>
+        </view>
+        <image class="w-4 h-4" src="../../images/ic_arrow_right.svg" />
+      </view>
     </view>
-
-    <view bindtap="onProfileClick" class="profile-container">
-      <image class="collection-icon" src="../../images/ic_user.png"></image>
-      <view class="collection-title margin-left">Profile</view>
+  </view>
+  <view class="mt-4 bg-white rounded-2xl">
+    <view bind:tap="onSponsorClick" class="flex items-center justify-between px-6 py-6">
+      <view class="flex items-center gap-4">
+        <image class="w-5 h-5" src="../../images/ic_user_sponsor.svg" />
+        <view class="text-title">Buy developer a coffee</view>
+      </view>
+      <image class="w-4 h-4" src="../../images/ic_arrow_right.svg" />
     </view>
-
+    <view bind:tap="onContributionClick" class="flex items-center justify-between px-6 py-6">
+      <view class="flex items-center gap-4">
+        <image class="w-5 h-5" src="/images/ic_user_contribution.svg" />
+        <view class="text-title">Contributions</view>
+      </view>
+      <image class="w-4 h-4" src="../../images/ic_arrow_right.svg" />
+    </view>
+    <view bind:tap="onStarClick" class="flex items-center justify-between px-6 py-6">
+      <view class="flex items-center gap-4">
+        <image class="w-5 h-5" src="/images/ic_user_github.svg" />
+        <view class="text-title">Star on Github</view>
+      </view>
+      <image class="w-4 h-4" src="../../images/ic_arrow_right.svg" />
+    </view>
+    <view bind:tap="onFeedbackClick" class="flex items-center justify-between px-6 py-6">
+      <view class="flex items-center gap-4">
+        <image class="w-5 h-5" src="/images/ic_feedback.svg" />
+        <view class="text-title">Feedback & Help</view>
+      </view>
+      <image class="w-4 h-4" src="../../images/ic_arrow_right.svg" />
+    </view>
+    <!-- Admin page -->
+    <view wx:if="{{userInfo.isAdmin}}" bind:tap="onAdminConsoleClick" class="flex items-center justify-between px-6 py-6">
+      <view class="flex items-center gap-4">
+        <image class="w-5 h-5" src="/images/ic_user_github.svg" />
+        <view class="text-title">Admin Console</view>
+      </view>
+      <image class="w-4 h-4" src="../../images/ic_arrow_right.svg" />
+    </view>
   </view>
 </view>
-
-<view class="divider margin-top"></view>
-<view bindtap="onSponsorClick" class="menu-item-container ">
-  <image class="menu-item-icon" src="../../images/ic_coffee.png"></image>
-  <view class="menu-item-text margin-left">
-    Buy developer a coffee
-  </view>
-</view>
-<view class="divider"></view>
-
-<view bindtap="onContributionClick" class="menu-item-container ">
-  <image class="menu-item-icon" src="/images/ic_code.png"></image>
-  <view class="menu-item-text margin-left">
-Contributions
-  </view>
-</view>
-<view class="divider"></view>
-
-
 <!-- Feedback -->
-<view class="cu-modal {{showingModal === 'feedback' ? 'show' : ''}}" catchtouchmove>
+<view class="cu-modal {{showingModal === 'feedback' ? 'show' : ''}}" bind:tap="onHideModal">
   <view class="cu-dialog modal-main">
-
     <view class="flex justify-between">
       <view class="modal-title">Feedback & Help</view>
     </view>
-
-    <view class="feedback-text margin-top">Join MS Life group to send your feedback:</view>
-    <view class="text-black">Adding Coconut and send <text class="text-bold text-black">msglife</text> to her</view>
-
-    <image show-menu-by-longpress="true" class="coconut-contact margin-top-sm" src="../../images/img_coconut.png" />
-    <view class="text-grey">Long press to scan </view>
-
-    <view class="flex align-center justify-end margin-top-lg">
+    <view class="text-gray-500 mt-2">
+      I’d love to hear your suggestions or feedback. Feel free to get in touch with me anytime.
+    </view>
+    <image show-menu-by-longpress="true" class="w-64 h-64 margin-top-sm" src="/images/qrcode_chris.png" />
+    <view class="text-grey">Long press to add my Wechat Or ping me(Chris Ye) on Teams</view>
+    <view class="flex items-center justify-end margin-top-lg">
       <view catchtap="onDismissModal" class="cu-btn modal-btn-ok">Done</view>
     </view>
   </view>
 </view>
-
 <!-- Sponsor -->
-<view class="cu-modal {{showingModal === 'sponsor' ? 'show' : ''}}" catchtouchmove>
-  <view class="cu-dialog modal-main">
-
+<view class="cu-modal {{showingModal === 'sponsor' ? 'show' : ''}}" bind:tap="onHideModal">
+  <view class="cu-dialog modal-main" catch:tap>
     <view class="flex justify-between">
       <view class="modal-title">Sponsor</view>
     </view>
-
-    <view class="text-black margin-top">Buy developer a cup of coffee if you like this app!</view>
-
-    <image mode="heightFix" show-menu-by-longpress="true" class="pay margin-top-sm" src="../../images/img_praise.png" />
-    <view class="text-grey">Long press to save QR code</view>
-
-
-    <view class="text-red text-bold">THANK YOU!</view>
-
-    <view class="flex align-center justify-end margin-top-lg">
-      <view catchtap="onDismissModal" class="cu-btn modal-btn-ok">Done</view>
+    <view class="text-black mt-2">您的支持是我更新的最大动力 ❤️</view>
+    <block wx:if="{{sponsorPayEnabled}}">
+      <view class="flex flex-col w-full margin-top">
+        <view class="grid grid-cols-3 gap-3 w-full mt-2">
+          <view wx:for="{{amounts}}" wx:key="value" data-amount="{{item.value}}" bind:tap="onSelectAmount" class="text-center p-1 rounded-lg border-4 border-solid border-blue-400 text-blue-500">
+            {{item.label}}
+          </view>
+          <view bind:tap="onOtherAmountClick" class="text-center p-1 rounded-lg border-4 border-solid border-blue-400 text-blue-500">
+            Other
+          </view>
+        </view>
+        <view class="margin-top-lg text-gray-600 text-sm">
+          Sponsors ❤️ ({{sponsors.length}})
+          <text class="text-red-900 text-xs"></text>
+        </view>
+        <scroll-view class="sponsor-list-height" scroll-y="true">
+          <block wx:for="{{sponsors}}" wx:key="_id">
+            <view class="flex items-center gap-2 mt-3">
+              <image bind:tap="onAvatarClick" class="shrink-0 w-10 h-10 rounded-full bg-gray-200 border-gray-light" src="{{item.anonymous ? null : item.user.avatarUrl}}" data-id="{{item.user._id}}" mode="aspectFill" lazy-load="{{true}}" />
+              <view>
+                <view class="text-xs text-gray-500">
+                  {{item.anonymous ? 'Anonymous' : item.user.nickName}}
+                </view>
+                <view class="mt-1 text-sm bg-gray-100 rounded-lg px-2 py-1">
+                  {{item.message ? item.message : "[No message]"}}
+                </view>
+              </view>
+            </view>
+          </block>
+        </scroll-view>
+      </view>
+    </block>
+    <block wx:else>
+      <image mode="heightFix" show-menu-by-longpress="true" class="pay margin-top-sm" src="../../images/img_praise.png" />
+      <view class="text-grey">Long press to save QR code</view>
+      <view class="text-red text-bold">THANK YOU!</view>
+      <view class="flex items-center justify-end margin-top-lg">
+        <view catch:tap="onDismissModal" class="cu-btn modal-btn-ok">Done</view>
+      </view>
+    </block>
+  </view>
+</view>
+<!-- Github -->
+<view class="cu-modal {{showingModal === 'github' ? 'show' : ''}}" bind:tap="onHideModal">
+  <view class="cu-dialog modal-main" catch:tap>
+    <view class="flex justify-between">
+      <view class="modal-title">Star on Github</view>
+    </view>
+    <view class="flex flex-col gap-6 margin-top">
+      <input class="flex-1 bg-gray-100 rounded p-2 text-sm" value="{{github}}" disabled />
+      <view bind:tap="onCopyGithubUrl" class="cu-btn bg-blue text-white w-fit self-end rounded-lg">
+        Copy
+      </view>
     </view>
   </view>
 </view>

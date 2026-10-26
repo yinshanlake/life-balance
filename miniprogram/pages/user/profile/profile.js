@@ -1,118 +1,81 @@
 const { formatDate } = require("../../../common/util");
+const { fetchUserActivities } = require("../../../repository/activityRepo");
 const {
-  fetchUserActivities, fetchUserGroups
-} = require("../../../repository/activityRepo");
-const {
-  fetchUserProfile
+  fetchUserProfile,
+  fetchCompany,
 } = require("../../../repository/userRepo");
-const { navigateToGroupDetail, navigateToGroup } = require("../../router");
+const { navigateToActivityDetail } = require("../../router");
 
-// pages/user/profile/profile.js
 Page({
-
-  /**
-   * 页面的初始数据
-   */
   data: {
-
+    hasUserInfo: false,
   },
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
-  onLoad: function (options) {
+  onLoad(options) {
     const id = options.id;
-    fetchUserProfile(id).then(user => {
+    wx.showLoading();
+    fetchUserProfile(id).then((user) => {
       console.log(user);
       if (user.birthday) {
-        user.age = ((new Date()).getFullYear()) - parseInt(user.birthday.slice(0, 4));
+        user.age =
+          new Date().getFullYear() - parseInt(user.birthday.slice(0, 4));
         console.log(parseInt(user.birthday.slice(0, 4)));
       }
+      if (user.company) {
+        fetchCompany(user.company).then((company) => {
+          this.setData({ company });
+        });
+      }
+      // Check if user has any profile information
+      const hasUserInfo = !!(
+        user.height ||
+        user.weight ||
+        user.school ||
+        user.occupation ||
+        user.age
+      );
+
+      // Combine avatar and photos
+      const combinedPhotos = user.photos
+        ? [user.avatarUrl, ...user.photos]
+        : [user.avatarUrl];
+
       this.setData({
-        user
+        user,
+        hasUserInfo,
+        combinedPhotos,
       });
     });
 
-    fetchUserActivities(id).then(activities => {
-      console.log("fetchUserActivities", activities);
-      activities.forEach(activity => {
-        activity.isOrganizer = activity.organizer._id === id;
-        activity.createDateStr = formatDate(activity._createTime)
-      });
-      this.setData({
-        activities
+    fetchUserActivities(id)
+      .then((activities) => {
+        console.log("fetchUserActivities", activities);
+        activities.forEach((activity) => {
+          activity.isOrganizer = activity.organizer._id === id;
+          activity.createDateStr = formatDate(activity._createTime);
+        });
+        this.setData({
+          activities,
+        });
       })
-    })
-  },
-
-  onGroupClick(e) {
-    navigateToGroupDetail(e.currentTarget.dataset.id);
-  },
-
-  onAllGroupClick(e) {
-    navigateToGroup();
+      .finally(() => {
+        wx.hideLoading();
+      });
   },
 
   onPhotoClick(e) {
-    const { user } = this.data;
-    const urls = [];
-    if (user.photos && user.photos.length > 0) {
-      urls.push(...user.photos);
-    } else {
-      urls.push(user.avatarUrl);
-    }
-
     wx.previewImage({
-      urls
-    })
+      urls: this.data.combinedPhotos,
+      current: e.currentTarget.dataset.photo,
+    });
   },
 
-  /**
-   * 生命周期函数--监听页面初次渲染完成
-   */
-  onReady: function () {
-
+  onActivityItemClicked(e) {
+    const id = e.currentTarget.dataset.id;
+    navigateToActivityDetail(id);
   },
 
-  /**
-   * 生命周期函数--监听页面显示
-   */
-  onShow: function () {
+  onShareAppMessage() {},
 
-  },
-
-  /**
-   * 生命周期函数--监听页面隐藏
-   */
-  onHide: function () {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面卸载
-   */
-  onUnload: function () {
-
-  },
-
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
-  onPullDownRefresh: function () {
-
-  },
-
-  /**
-   * 页面上拉触底事件的处理函数
-   */
-  onReachBottom: function () {
-
-  },
-
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage: function () {
-
-  }
-})
+  onShareTimeline() {},
+});

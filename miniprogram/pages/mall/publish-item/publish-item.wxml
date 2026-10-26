@@ -1,0 +1,68 @@
+<toolbar isBack="{{true}}" bgColor="bg-white">
+  <view wx:if="{{productId}}" slot="backText" class="text-sm">编辑物品</view>
+  <view wx:else slot="backText" class="text-sm">发布物品</view>
+</toolbar>
+<view class="plr pb-10 pt-8">
+  <view class="bg-white rounded-lg p-5 py-6 py-4 mb-4 border-gray">
+    <view class="flex items-center gap-5 pb-3dot5">
+      <view class="font-semibold text-black text-sm shrink-0">我要</view>
+      <view class="flex rounded-lg">
+        <view bindtap="onTypeChange" data-type="sell" class="px-4 py-1dot5 rounded-l-full text-xs {{productType === 'sell' ? 'bg-blueBg text-white' : 'type'}}">
+          出售
+        </view>
+        <view bindtap="onTypeChange" data-type="wanted" class="px-4 py-1dot5 rounded-r-full text-xs {{productType === 'wanted' ? 'bg-blueBg text-white' : 'type'}}">
+          求购
+        </view>
+      </view>
+    </view>
+    <view class="flex items-center gap-5 py-3dot5">
+      <view class="font-semibold text-black text-sm shrink-0">标题</view>
+      <input class="text-sm w-full" placeholder="请输入标题，30 字以内" placeholder-class="text-input font-normal" maxlength="30" model:value="{{title}}" bindinput="onTitleInput" />
+    </view>
+    <view class="flex items-center gap-5 py-3dot5">
+      <view class="font-semibold text-black text-sm shrink-0">价格</view>
+      <input class="text-sm w-full" placeholder="CNY 0.00" placeholder-class="text-input font-normal" type="digit" model:value="{{price}}" bindinput="onPriceInput" />
+    </view>
+    <view class="flex gap-5 py-3dot5">
+      <view class="font-semibold text-black text-sm shrink-0">类别</view>
+      <view class="flex flex-wrap gap-2dot5">
+        <view wx:for="{{categories}}" wx:key="*this" bindtap="onCategorySelect" data-category="{{item.name}}" class="px-2dot5 py-1.5 rounded-md border-gray text-xs {{item.isSelected ? 'bg-blueBg text-white' : 'text-input'}}">
+          {{item.name}}
+        </view>
+      </view>
+    </view>
+    <view class="flex items-center justify-between gap-5 pt-3dot5">
+      <view class="flex flex-col gap-1 shrink-0">
+        <view class="font-semibold text-black text-sm">联系方式</view>
+        <view class="text-gray text-xs">推荐填写 alias 或者微信id</view>
+      </view>
+      <input class="text-right text-sm font-medium w-full" placeholder="Alias or email" placeholder-class="text-input" model:value="{{contact}}" bindinput="onContactInput" />
+    </view>
+  </view>
+  <view class="bg-white rounded-lg p-5 py-4 space-y-6 border-gray">
+    <view>
+      <textarea class="w-full h-40 text-sm" maxlength="100" placeholder="请输入物品描述，100 字以内" placeholder-class="text-input" model:value="{{description}}" bindinput="onDescriptionInput" />
+    </view>
+    <view class="py-2">
+      <view class="flex flex-wrap gap-2">
+        <view wx:for="{{pictures}}" wx:key="*this" class="relative bg-gray-100 h-16 w-16">
+          <image src="{{item}}" class="w-full h-full" mode="aspectFill" />
+          <view class="absolute -top-1 -right-1 w-4 h-4 bg-black/50 rounded-full flex items-center justify-center" catchtap="onRemoveImage" data-index="{{index}}">
+            <text class="text-white text-xs">×</text>
+          </view>
+        </view>
+        <view wx:if="{{!pictures || pictures.length < 9}}" class="flex items-center justify-center text-plus text-sm font-semibold w-16 h-16 z-50 bg-add-picture" bindtap="onAddImage">
+          ＋
+        </view>
+      </view>
+    </view>
+  </view>
+  <view class="px-4 flex gap-4 justify-end mt-6">
+    <view class="py-2 px-10 rounded-full text-cancel border-gray text-sm" bindtap="onCancel">
+      取消
+    </view>
+    <view class="py-2 px-10 rounded-full bg-blueBg text-white text-sm" bindtap="onPublish">
+      {{productId ? '保存' : '发布'}}
+    </view>
+  </view>
+</view>
