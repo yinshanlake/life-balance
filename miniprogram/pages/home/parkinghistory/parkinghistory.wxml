@@ -1,0 +1,38 @@
+<toolbar isBack="{{true}}" bgColor="bg-white"></toolbar>
+<view class="history-page">
+  <view class="history-title">停车位历史趋势</view>
+  <view class="history-note">北京时间 · 可切换日期 · 仅展示实际采样</view>
+  <view class="history-controls">
+    <button size="mini" data-lot="b25" bindtap="onLotChange" class="{{lot === 'b25' ? 'active' : ''}}">B25</button>
+    <button size="mini" data-lot="zhongmeng" bindtap="onLotChange" class="{{lot === 'zhongmeng' ? 'active' : ''}}">中盟</button>
+  </view>
+  <view class="history-controls">
+    <picker mode="date" value="{{date}}" start="{{earliest}}" end="{{today}}" bindchange="onDateChange">
+      <view class="date-picker">{{date}} ▾</view>
+    </picker>
+    <button size="mini" bindtap="onLastWeek">上周此日</button>
+  </view>
+  <view wx:if="{{loading}}" class="history-state">正在加载历史数据…</view>
+  <view wx:elif="{{error}}" class="history-state">
+    <view>{{error}}</view>
+    <button size="mini" bindtap="loadHistory">重试</button>
+  </view>
+  <block wx:else>
+    <view wx:if="{{!hasPoints}}" class="history-state">这一天尚无采样。周末、配置的节假日或采集未运行时不会产生历史数据。</view>
+    <block wx:else>
+      <view class="history-note">纵轴：剩余车位（个） · 横轴：时间</view>
+      <canvas id="history-chart" canvas-id="history-chart" class="history-chart"></canvas>
+      <view class="history-note">虚线标记当前北京时间；缺失采样不连线。</view>
+      <view class="history-summary">所选日期当前时段：{{sameTimeText}}</view>
+      <view class="history-title-small">余量热力条（点击查看）</view>
+      <view class="heat-strip">
+        <view wx:for="{{cells}}" wx:key="minute" class="heat-cell" style="background: {{item.color}}" data-index="{{index}}" bindtap="onCellTap"></view>
+      </view>
+      <view class="heat-labels"><text>{{startLabel}}</text><text>{{endLabel}}</text></view>
+      <view class="history-note">蓝色：大于20 · 黄色：1–20 · 红色：0 · 灰色：未采样</view>
+      <view class="history-summary">{{selectedCell}}</view>
+      <view class="history-note">共 {{sampleCount}} 条实际记录；当前采样配置间隔 {{intervalMinutes}} 分钟。</view>
+    </block>
+  </block>
+  <view class="history-note">默认仅工作日白天采集；上线前的历史无法补回。此页面不是实时车位查询。</view>
+</view>

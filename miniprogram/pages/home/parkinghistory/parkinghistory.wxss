@@ -1,0 +1,15 @@
+.history-page { padding: 32rpx; color: #1f2937; }
+.history-title { font-size: 38rpx; font-weight: bold; margin-bottom: 12rpx; }
+.history-title-small { font-size: 28rpx; margin: 24rpx 0 12rpx; }
+.history-note { color: #6b7280; font-size: 24rpx; line-height: 1.7; margin: 12rpx 0; }
+.history-controls { display: flex; align-items: center; gap: 20rpx; margin: 24rpx 0; }
+.history-controls button { margin: 0; }
+.history-controls .active { background: #3679ee; color: white; }
+.date-picker { padding: 16rpx 24rpx; background: #e5e7eb; border-radius: 12rpx; }
+.history-chart { width: 100%; height: 460rpx; }
+.history-state { padding: 48rpx 0; line-height: 1.8; }
+.history-state button { margin-top: 20rpx; }
+.history-summary { font-size: 26rpx; margin: 16rpx 0; min-height: 36rpx; }
+.heat-strip { display: flex; width: 100%; height: 52rpx; }
+.heat-cell { flex: 1; height: 52rpx; border-right: 1rpx solid white; }
+.heat-labels { display: flex; justify-content: space-between; font-size: 22rpx; color: #6b7280; }
