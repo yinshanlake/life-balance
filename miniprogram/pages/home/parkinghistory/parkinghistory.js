@@ -11,6 +11,7 @@ Page({
     error: '',
     hasPoints: false,
     cells: [],
+    heatGroups: [],
     selectedCell: '',
   },
 
@@ -59,7 +60,7 @@ Page({
   loadHistory() {
     const requestId = ++this._requestId;
     this._history = null;
-    this.setData({ loading: true, error: '', hasPoints: false, cells: [], selectedCell: '' });
+    this.setData({ loading: true, error: '', hasPoints: false, cells: [], heatGroups: [], selectedCell: '' });
     return fetchParkingHistory(this.data.date).then(history => {
       if (this._unloaded || requestId !== this._requestId) return;
       this._history = history;
@@ -78,10 +79,10 @@ Page({
     this.setData({
       hasPoints: model.points.length > 0,
       cells: model.cells,
+      heatGroups: model.heatGroups,
       startLabel: model.startLabel,
       endLabel: model.endLabel,
       sameTimeText: model.sameTimeText,
-      intervalMinutes: this._history.intervalMinutes,
       sampleCount: model.points.length,
     }, () => this.drawChart());
   },
@@ -113,7 +114,7 @@ Page({
       ctx.setLineWidth(2);
       model.points.forEach((point, index) => {
         const previous = model.points[index - 1];
-        if (previous && point.minute - previous.minute === previous.intervalMinutes) {
+        if (point.connectFromPrevious) {
           ctx.beginPath();
           ctx.moveTo(x(previous.minute), y(previous.value));
           ctx.lineTo(x(point.minute), y(point.value));

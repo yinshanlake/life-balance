@@ -18,6 +18,7 @@ function harness(options = {}) {
   const records = new Map();
   const removed = [];
   const reads = [];
+  const workdayChecks = [];
   const db = {
     command: { lt: value => ({ lt: value }) },
     collection(name) {
@@ -61,6 +62,14 @@ function harness(options = {}) {
   };
   const handle = createHandler({
     db, config: { ...config, ...options.config }, clock: () => now,
+    async isWorkday(date) {
+      workdayChecks.push(date);
+      if (options.calendarError) throw new Error('Calendar unavailable');
+      if (options.isWorkday) return options.isWorkday(date);
+      if (options.workday !== undefined) return options.workday;
+      const weekday = new Date(date).getUTCDay();
+      return weekday !== 0 && weekday !== 6;
+    },
     async fetchSpaces() {
       requests++;
       if (options.sourceError) throw new Error('Source failed');
@@ -68,7 +77,7 @@ function harness(options = {}) {
     },
   });
   return {
-    handle, records, removed, reads,
+    handle, records, removed, reads, workdayChecks,
     get requests() { return requests; },
     setTime(value) { now = time(value); },
     query(date) { return handle({ action: 'history', data: { date } }); },
@@ -107,53 +116,85 @@ test('timer samples without any page view, merging both lots in an idempotent sl
   const record = h.records.get('2026-10-26-540');
   assert.equal(record.b25, 0);
   assert.equal(record.zhongmeng, 42);
-  assert.equal(record.intervalMinutes, 10);
+  assert.equal(record.intervalMinutes, 5);
+  assert.equal(record.window, 'morning');
 });
 
-test('weekends, holidays, off-hours, unaligned minutes never call the source or write', async () => {
+test('non-workdays, off-hours and unaligned minutes never call the parking source or write', async () => {
   for (const at of [
-    '2026-10-24T09:00:00', '2026-10-25T09:00:00', '2026-10-26T06:50:00',
-    '2026-10-26T19:00:00', '2026-10-26T09:01:00',
+    '2026-10-24T09:00:00', '2026-10-25T09:00:00', '2026-10-26T07:25:00',
+    '2026-10-26T10:35:00', '2026-10-26T12:00:00', '2026-10-26T16:25:00',
+    '2026-10-26T19:35:00', '2026-10-26T09:01:00', '2026-10-26T16:35:00',
   ]) {
     const h = harness({ at });
-    assert.deepEqual(await h.handle(COLLECT), { skipped: true });
+    assert.equal((await h.handle(COLLECT)).skipped, true);
     assert.equal(h.requests, 0);
     assert.equal(h.records.size, 0);
   }
-  const h = harness({ config: { skipDates: ['2026-10-26'] } });
+  const h = harness({ at: '2026-10-01T09:00:00', workday: false });
   await h.handle(COLLECT);
   assert.equal(h.requests, 0);
 });
 
-test('sampling window is start-inclusive and end-exclusive; longer interval is honored', async () => {
-  const h = harness({ at: '2026-10-26T07:00:00', config: { intervalMinutes: 20 } });
-  await h.handle(COLLECT);
-  h.setTime('2026-10-26T18:40:00');
-  await h.handle(COLLECT);
-  h.setTime('2026-10-26T18:50:00');
-  await h.handle(COLLECT);
-  assert.equal(h.requests, 2);
+test('both peak windows include their boundaries and use independent five/ten-minute intervals', async () => {
+  const h = harness();
+  for (const time of ['07:30', '07:35', '10:25', '10:30', '16:30', '16:40', '19:20', '19:30']) {
+    h.setTime(`2026-10-26T${time}:00`);
+    assert.equal((await h.handle(COLLECT)).recorded, true);
+  }
+  assert.equal(h.requests, 8);
+  assert.equal(h.records.get('2026-10-26-450').intervalMinutes, 5);
+  assert.equal(h.records.get('2026-10-26-990').intervalMinutes, 10);
+  assert.equal(h.records.get('2026-10-26-1170').window, 'evening');
 });
 
-test('default eight-day window stores at most 432 combined records and expires only the oldest day', async () => {
-  const h = harness();
+test('times are relative to each configured start, and off-window calls do not even load the calendar', async () => {
+  const h = harness({
+    config: { windows: [
+      { name: 'morning', startMinute: 455, endMinute: 635, intervalMinutes: 10 },
+      config.windows[1],
+    ] },
+  });
+  h.setTime('2026-10-26T07:35:00');
+  await h.handle(COLLECT);
+  h.setTime('2026-10-26T07:40:00');
+  await h.handle(COLLECT);
+  h.setTime('2026-10-26T12:00:00');
+  await h.handle(COLLECT);
+  assert.equal(h.requests, 1);
+  assert.equal(h.workdayChecks.length, 1);
+});
+
+test('automatic workday decisions allow weekend makeup days, and calendar failure never guesses', async () => {
+  const h = harness({ at: '2026-10-10T09:00:00', workday: true });
+  assert.equal((await h.handle(COLLECT)).recorded, true);
+  const unavailable = harness({ calendarError: true });
+  await assert.rejects(unavailable.handle(COLLECT), /Calendar unavailable/);
+  assert.equal(unavailable.requests, 0);
+  assert.equal(unavailable.records.size, 0);
+});
+
+test('exact schedule produces 37 morning plus 19 evening records, bounded to 448 over eight workdays', async () => {
+  const h = harness({ workday: true });
   for (const date of [
     '2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29',
     '2026-10-30', '2026-10-31', '2026-11-01', '2026-11-02',
   ]) {
-    for (let minute = 0; minute < 1440; minute += 10) {
+    for (let minute = 0; minute < 1440; minute += 5) {
       h.setTime(`${date}T${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}:00`);
       await h.handle(COLLECT);
     }
   }
-  assert.equal(h.requests, 432);
-  assert.equal(h.records.size, 432);
-  assert.equal((await h.query('2026-10-26')).samples.length, 72);
+  assert.equal(h.requests, 448);
+  assert.equal(h.records.size, 448);
+  const first = (await h.query('2026-10-26')).samples;
+  assert.equal(first.filter(sample => sample.window === 'morning').length, 37);
+  assert.equal(first.filter(sample => sample.window === 'evening').length, 19);
   assert.equal((await h.handle(CLEANUP)).removed, 0);
   h.setTime('2026-11-03T00:05:00');
-  assert.equal((await h.handle(CLEANUP)).removed, 72);
-  assert.equal(h.records.size, 360);
-  assert.equal(h.records.has('2026-10-27-420'), true);
+  assert.equal((await h.handle(CLEANUP)).removed, 56);
+  assert.equal(h.records.size, 392);
+  assert.equal(h.records.has('2026-10-27-450'), true);
 });
 
 test('spoofed client timers cannot write or delete, and unknown actions fail', async () => {
@@ -166,6 +207,7 @@ test('spoofed client timers cannot write or delete, and unknown actions fail', a
     await assert.rejects(h.handle(CLEANUP, identity), /cannot be invoked/);
     assert.equal(h.requests, 0);
     assert.equal(h.reads.length, 0);
+    assert.equal(h.workdayChecks.length, 0);
   }
   await assert.rejects(harness().handle({ Type: 'Timer', TriggerName: 'other' }), /Unknown/);
   await assert.rejects(harness().handle({ action: 'delete' }), /Unknown/);
@@ -189,6 +231,7 @@ test('history includes D-7, rejects malformed/out-of-range dates, and is strictl
     assert.deepEqual(history.samples, []);
     assert.equal(history.earliest, '2026-10-19');
     assert.equal(history.timezone, 'Asia/Shanghai');
+    assert.deepEqual(history.windows, config.windows);
   }
   for (const date of ['2026-10-18', '2026-10-27', '2026-02-30', {}, null, '2026-1-1']) {
     await assert.rejects(h.query(date), /outside/);
@@ -196,16 +239,17 @@ test('history includes D-7, rejects malformed/out-of-range dates, and is strictl
   assert.equal(h.requests, 0);
   assert.equal(h.records.size, 0);
   assert.equal(h.removed.length, 0);
+  assert.equal(h.workdayChecks.length, 0);
 });
 
 test('history paginates past 100 records and excludes internal database IDs', async () => {
   const h = harness();
-  for (let minute = 0; minute < 1440; minute += 10) {
+  for (let minute = 0; minute < 1440; minute += 5) {
     h.records.set(String(minute), { _id: String(minute), date: '2026-10-26', minute, b25: minute, zhongmeng: 0 });
   }
   const history = await h.query('2026-10-26');
-  assert.equal(history.samples.length, 144);
-  assert.equal(history.samples[143].minute, 1430);
+  assert.equal(history.samples.length, 288);
+  assert.equal(history.samples[287].minute, 1435);
   assert.equal('_id' in history.samples[0], false);
 });
 
@@ -219,6 +263,7 @@ test('cleanup runs on weekends, preserves the exact retention boundary, and neve
   assert.equal(result.removed, 1);
   assert.equal(h.records.has('2026-10-18'), true);
   assert.equal(h.requests, 0);
+  assert.equal(h.workdayChecks.length, 0);
   assert.equal((await h.handle(CLEANUP)).removed, 0);
 });
 
@@ -234,25 +279,26 @@ test('cleanup is bounded to 500 deletions and resumes safely', async () => {
 
 test('configuration bounds cost and retains at least the prior same weekday', () => {
   for (const override of [
-    { intervalMinutes: 1 }, { startHour: -1 }, { endHour: 25 }, { startHour: 19 },
-    { retentionDays: 7 }, { retentionDays: 32 }, { skipDates: ['2026-02-30'] },
+    { windows: [] }, { retentionDays: 7 }, { retentionDays: 32 },
+    { calendar: { refreshHours: 0, maxStaleHours: 168 } },
   ]) assert.throws(() => validateConfig({ ...config, ...override }));
 });
 
-test('HTTP adapter uses one bounded request and rejects timeout, bad status and malformed JSON', async () => {
-  const source = fs.readFileSync(path.join(__dirname, '../cloudfunctions/parkingHistory/source.js'), 'utf8');
-  async function run(mode) {
+test('shared HTTP/HTTPS adapter bounds requests and rejects timeout, bad status and malformed JSON', async () => {
+  const source = fs.readFileSync(path.join(__dirname, '../cloudfunctions/parkingHistory/http-json.js'), 'utf8');
+  async function run(mode, protocol) {
     let requests = 0, deadline, cleared = false;
     const request = new EventEmitter();
     request.destroy = error => { request.emit('error', error); request.emit('close'); };
     const module = { exports: {} };
     vm.runInNewContext(source, {
-      module, exports: module.exports,
+      module, exports: module.exports, URL,
       setTimeout(fn, ms) { assert.equal(ms, 8000); deadline = fn; return 1; },
       clearTimeout() { cleared = true; },
       require(name) {
-        assert.equal(name, 'http');
+        assert.ok(['http', 'https'].includes(name));
         return { get(url, callback) {
+          assert.equal(name, protocol);
           requests++;
           process.nextTick(() => {
             if (mode === 'timeout') { deadline(); return; }
@@ -274,10 +320,12 @@ test('HTTP adapter uses one bounded request and rejects timeout, bad status and 
         } };
       },
     });
-    if (mode === 'ok') assert.equal((await module.exports.fetchSpaces()).b25, 0);
-    else await assert.rejects(module.exports.fetchSpaces());
+    if (mode === 'ok') assert.equal((await module.exports.getJson(`${protocol}://test.local/data`)).msparkingData[0].areaFreeSpaceNum, 0);
+    else await assert.rejects(module.exports.getJson(`${protocol}://test.local/data`));
     assert.equal(requests, 1);
     assert.equal(cleared, true);
   }
-  for (const mode of ['ok', 'timeout', 'status', 'json', 'large']) await run(mode);
+  for (const protocol of ['http', 'https']) {
+    for (const mode of ['ok', 'timeout', 'status', 'json', 'large']) await run(mode, protocol);
+  }
 });

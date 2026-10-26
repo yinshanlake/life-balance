@@ -1,7 +1,5 @@
-module.exports = {
-  intervalMinutes: 10,
-  startHour: 7,
-  endHour: 19,
-  retentionDays: 8,
-  skipDates: [],
-};
+const fs = require('fs');
+const path = require('path');
+const { parseConfig } = require('./settings');
+
+module.exports = parseConfig(fs.readFileSync(path.join(__dirname, 'parking-history.ini'), 'utf8'));

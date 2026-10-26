@@ -1,3 +1,6 @@
+const { validateConfig } = require('./settings');
+const { isDate } = require('./workdays');
+
 const DAY = 86400000;
 const OFFSET = 8 * 60 * 60 * 1000;
 const COLLECTION = 'parking-history';
@@ -13,22 +16,7 @@ function localTime(now) {
   };
 }
 
-function isDate(value) {
-  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-    Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
-}
-
-function validateConfig(config) {
-  if (![10, 20, 30, 60].includes(config.intervalMinutes) ||
-      !Number.isInteger(config.startHour) || !Number.isInteger(config.endHour) ||
-      config.startHour < 0 || config.endHour > 24 || config.startHour >= config.endHour ||
-      !Number.isInteger(config.retentionDays) || config.retentionDays < 8 || config.retentionDays > 31 ||
-      !Array.isArray(config.skipDates) || config.skipDates.some(date => !isDate(date))) {
-    throw new Error('Invalid parking history configuration');
-  }
-}
-
-function createHandler({ db, config, fetchSpaces, clock = Date.now }) {
+function createHandler({ db, config, fetchSpaces, isWorkday, clock = Date.now }) {
   validateConfig(config);
   const collection = () => db.collection(COLLECTION);
 
@@ -58,18 +46,19 @@ function createHandler({ db, config, fetchSpaces, clock = Date.now }) {
       }
       if (event.TriggerName === CLEANUP) return cleanup(now);
       if (event.TriggerName !== COLLECT) throw new Error('Unknown parking history timer');
-      if (current.weekday === 0 || current.weekday === 6 ||
-          config.skipDates.includes(current.date) ||
-          current.minute < config.startHour * 60 || current.minute >= config.endHour * 60 ||
-          current.minute % config.intervalMinutes !== 0) {
-        return { skipped: true };
+      const window = config.windows.find(item => current.minute >= item.startMinute &&
+        current.minute <= item.endMinute && (current.minute - item.startMinute) % item.intervalMinutes === 0);
+      if (!window) return { skipped: true, reason: 'outside-sampling-slot' };
+      if (!await isWorkday(current.date)) {
+        return { skipped: true, reason: 'non-workday' };
       }
       const spaces = await fetchSpaces();
-      const minute = Math.floor(current.minute / config.intervalMinutes) * config.intervalMinutes;
+      const minute = current.minute;
       const id = `${current.date}-${minute}`;
       await collection().doc(id).set({
         data: {
-          date: current.date, minute, sampledAt: clock(), intervalMinutes: config.intervalMinutes,
+          date: current.date, minute, sampledAt: clock(), window: window.name,
+          intervalMinutes: window.intervalMinutes,
           b25: spaces.b25, zhongmeng: spaces.zhongmeng
         }
       });
@@ -86,7 +75,7 @@ function createHandler({ db, config, fetchSpaces, clock = Date.now }) {
       const { data } = await collection().where({ date }).orderBy('minute', 'asc')
         .skip(offset).limit(100).get();
       samples.push(...data.map(item => ({
-        minute: item.minute, sampledAt: item.sampledAt, intervalMinutes: item.intervalMinutes,
+        minute: item.minute, sampledAt: item.sampledAt, intervalMinutes: item.intervalMinutes, window: item.window,
         b25: item.b25, zhongmeng: item.zhongmeng
       })));
       if (data.length < 100) break;
@@ -94,9 +83,7 @@ function createHandler({ db, config, fetchSpaces, clock = Date.now }) {
     return {
       date, today: current.date, earliest,
       timezone: 'Asia/Shanghai',
-      intervalMinutes: config.intervalMinutes,
-      startHour: config.startHour,
-      endHour: config.endHour,
+      windows: config.windows,
       samples
     };
   };

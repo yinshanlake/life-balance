@@ -5,14 +5,17 @@ const path = require('node:path');
 const vm = require('node:vm');
 const model = require('../miniprogram/pages/home/parkinghistory/model');
 const root = path.resolve(__dirname, '..');
-const now = Date.parse('2026-10-26T09:25:00+08:00');
+const now = Date.parse('2026-10-26T09:12:00+08:00');
 const history = {
   date: '2026-10-19', today: '2026-10-26', earliest: '2026-10-19',
-  intervalMinutes: 10, startHour: 7, endHour: 19,
+  windows: [
+    { name: 'morning', startMinute: 450, endMinute: 630, intervalMinutes: 5 },
+    { name: 'evening', startMinute: 990, endMinute: 1170, intervalMinutes: 10 },
+  ],
   samples: [
-    { minute: 540, b25: 20, zhongmeng: 50, intervalMinutes: 10 },
-    { minute: 550, b25: 10, zhongmeng: 40, intervalMinutes: 10 },
-    { minute: 570, b25: 0, zhongmeng: 30, intervalMinutes: 10 },
+    { minute: 540, b25: 20, zhongmeng: 50, intervalMinutes: 5 },
+    { minute: 545, b25: 10, zhongmeng: 40, intervalMinutes: 5 },
+    { minute: 555, b25: 0, zhongmeng: 30, intervalMinutes: 5 },
   ],
 };
 const flush = () => new Promise(setImmediate);
@@ -55,28 +58,71 @@ test('model preserves gaps and zero, and uses Shanghai date rather than host loc
   const result = model.buildModel(history, 'b25', now);
   assert.equal(model.shanghaiDate(Date.parse('2026-10-25T17:00:00Z')), '2026-10-26');
   assert.equal(model.daysBefore('2026-10-26', 7), '2026-10-19');
-  assert.equal(result.cells.find(cell => cell.minute === 560).value, null);
-  assert.equal(result.cells.find(cell => cell.minute === 570).value, 0);
-  assert.equal(result.cells.find(cell => cell.minute === 570).color, '#e35b55');
+  assert.equal(result.cells.find(cell => cell.minute === 550).value, null);
+  assert.equal(result.cells.find(cell => cell.minute === 555).value, 0);
+  assert.equal(result.cells.find(cell => cell.minute === 555).color, '#e35b55');
   assert.equal(result.sameTimeText, '当前时段没有采样');
   assert.equal(model.buildModel(history, 'zhongmeng', now).points[0].value, 50);
 });
 
 test('model preserves samples from earlier window/interval configurations', () => {
   const result = model.buildModel({
-    ...history, startHour: 10, intervalMinutes: 20,
+    ...history, windows: [{ ...history.windows[0], startMinute: 600, intervalMinutes: 10 }, history.windows[1]],
     samples: [{ minute: 540, b25: 0, zhongmeng: 1, intervalMinutes: 10 }],
   }, 'b25', now);
   assert.equal(result.start, 540);
   assert.equal(result.points[0].intervalMinutes, 10);
+  assert.equal(result.heatGroups[2].label, '其他历史实测时段');
 });
 
 test('same-time comparison shows the actual observation only within its sample slot', () => {
-  const result = model.buildModel(history, 'b25', Date.parse('2026-10-26T09:15:00+08:00'));
-  assert.equal(result.sameTimeText, '09:10 采样：10 个');
+  const result = model.buildModel(history, 'b25', Date.parse('2026-10-26T09:06:00+08:00'));
+  assert.equal(result.sameTimeText, '09:05 采样：10 个');
   const empty = model.buildModel({ ...history, samples: [] }, 'b25', now);
   assert.equal(empty.points.length, 0);
   assert.equal(empty.sameTimeText, '当前时段没有采样');
+});
+
+test('mixed-interval heat strips contain only scheduled slots and never invent midday missing data', () => {
+  const result = model.buildModel(history, 'b25', Date.parse('2026-10-26T12:00:00+08:00'));
+  assert.equal(result.heatGroups.length, 2);
+  assert.equal(result.heatGroups[0].cells.length, 37);
+  assert.equal(result.heatGroups[1].cells.length, 19);
+  assert.equal(result.cells.length, 56);
+  assert.equal(result.cells.some(cell => cell.minute > 630 && cell.minute < 990), false);
+  assert.equal(result.startLabel, '07:30');
+  assert.equal(result.endLabel, '19:30');
+  assert.equal(result.sameTimeText, '当前时间不在采集时段');
+});
+
+test('an interval change uses the latest actual observation, and malformed records fail rather than guessing', () => {
+  const result = model.buildModel({
+    ...history, samples: [
+      { minute: 540, b25: 20, zhongmeng: 50, intervalMinutes: 10 },
+      { minute: 545, b25: 10, zhongmeng: 40, intervalMinutes: 5 },
+    ],
+  }, 'b25', Date.parse('2026-10-26T09:06:00+08:00'));
+  assert.equal(result.sameTimeText, '09:05 采样：10 个');
+  for (const invalid of [
+    { minute: 540, b25: null, intervalMinutes: 5 },
+    { minute: 540, b25: 0 },
+    { minute: -1, b25: 0, intervalMinutes: 5 },
+  ]) assert.throws(() => model.buildModel({ ...history, samples: [invalid] }, 'b25', now));
+});
+
+test('charts never join separate windows even when their nearest samples are five minutes apart', () => {
+  const result = model.buildModel({
+    ...history,
+    windows: [
+      { name: 'morning', startMinute: 450, endMinute: 455, intervalMinutes: 5 },
+      { name: 'evening', startMinute: 460, endMinute: 470, intervalMinutes: 10 },
+    ],
+    samples: [
+      { minute: 455, b25: 1, zhongmeng: 2, intervalMinutes: 5, window: 'morning' },
+      { minute: 460, b25: 3, zhongmeng: 4, intervalMinutes: 10, window: 'evening' },
+    ],
+  }, 'b25', now);
+  assert.equal(result.points[1].connectFromPrevious, false);
 });
 
 test('date and lot switches render real data, and charts never connect across a missing slot', async () => {
@@ -85,12 +131,12 @@ test('date and lot switches render real data, and charts never connect across a 
   h.requests[0].resolve(history);
   await flush();
   assert.equal(h.page.data.hasPoints, true);
-  // One axis path and one adjacent pair; the 20-minute gap is not connected.
+  // One axis path and one adjacent pair; the missing five-minute slot is not connected.
   assert.equal(h.strokes, 3); // axes, one segment, and current-time marker
   h.page.onLotChange({ currentTarget: { dataset: { lot: 'zhongmeng' } } });
   assert.equal(h.page._model.points[0].value, 50);
   assert.equal(h.requests.length, 1);
-  h.page.onCellTap({ currentTarget: { dataset: { index: 15 } } });
+  h.page.onCellTap({ currentTarget: { dataset: { index: 18 } } });
   assert.match(h.page.data.selectedCell, /剩余车位/);
   h.page.onLastWeek();
   assert.equal(h.requests[1].date, '2026-10-19');
