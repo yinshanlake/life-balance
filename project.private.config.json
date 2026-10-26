@@ -6,6 +6,41 @@
     "miniprogram": {
       "list": [
         {
+          "name": "pages/luck-name/luck-name",
+          "pathName": "pages/luck-name/luck-name",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "perkdetail",
+          "pathName": "pages/perk/perkdetail/perkdetail",
+          "query": "id=7b38e2d367519f260296861141b48e32",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "perk",
+          "pathName": "pages/perk/perk",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/onboarding/onboarding",
+          "pathName": "pages/onboarding/onboarding",
+          "query": "",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
+          "name": "pages/user/user-order/user-order",
+          "pathName": "pages/user/user-order/user-order",
+          "query": "id=7f296b2167344b4600ffb1d6050f1aa4",
+          "launchMode": "default",
+          "scene": null
+        },
+        {
           "name": "Activity Detail",
           "pathName": "pages/activity/activitydetail/activitydetail",
           "query": "id=18ed0968617aa60a0254dacd347cdcec",
@@ -124,5 +159,6 @@
     }
   },
   "description": "Project configuration file, more information: https://developers.weixin.qq.com/miniprogram/dev/devtools/projectconfig.html",
-  "projectname": "Life"
+  "projectname": "Life",
+  "libVersion": "2.19.3"
 }

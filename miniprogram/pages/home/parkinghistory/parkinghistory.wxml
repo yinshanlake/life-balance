@@ -1,0 +1,40 @@
+<toolbar isBack="{{true}}" bgColor="bg-white"></toolbar>
+<view class="history-page">
+  <view class="history-title">停车位历史趋势</view>
+  <view class="history-note">北京时间 · 可切换日期 · 仅展示实际采样</view>
+  <view class="history-controls">
+    <button size="mini" data-lot="b25" bindtap="onLotChange" class="{{lot === 'b25' ? 'active' : ''}}">B25</button>
+    <button size="mini" data-lot="zhongmeng" bindtap="onLotChange" class="{{lot === 'zhongmeng' ? 'active' : ''}}">中盟</button>
+  </view>
+  <view class="history-controls">
+    <picker mode="date" value="{{date}}" start="{{earliest}}" end="{{today}}" bindchange="onDateChange">
+      <view class="date-picker">{{date}} ▾</view>
+    </picker>
+    <button size="mini" bindtap="onLastWeek">上周此日</button>
+  </view>
+  <view wx:if="{{loading}}" class="history-state">正在加载历史数据…</view>
+  <view wx:elif="{{error}}" class="history-state">
+    <view>{{error}}</view>
+    <button size="mini" bindtap="loadHistory">重试</button>
+  </view>
+  <block wx:else>
+    <view wx:if="{{!hasPoints}}" class="history-state">这一天尚无采样。非工作日自动跳过，调休补班日照常采集；仅在配置的早晚高峰采集。采集未启用或日历不可用也可能造成空缺。</view>
+    <block wx:else>
+      <view class="history-note">纵轴：剩余车位（个） · 横轴：时间</view>
+      <canvas id="history-chart" canvas-id="history-chart" class="history-chart"></canvas>
+      <view class="history-note">虚线标记当前北京时间；缺失采样不连线。</view>
+      <view class="history-summary">所选日期当前时段：{{sameTimeText}}</view>
+      <view class="history-title-small">余量热力条（点击查看）</view>
+      <block wx:for="{{heatGroups}}" wx:key="name" wx:for-item="group">
+        <view class="history-note">{{group.label}} {{group.startLabel}}–{{group.endLabel}}<text wx:if="{{group.intervalMinutes}}"> · 每{{group.intervalMinutes}}分钟</text></view>
+        <view class="heat-strip">
+          <view wx:for="{{group.cells}}" wx:key="minute" class="heat-cell" style="background: {{item.color}}" data-index="{{item.index}}" bindtap="onCellTap"></view>
+        </view>
+      </block>
+      <view class="history-note">蓝色：大于20 · 黄色：1–20 · 红色：0 · 灰色：未采样</view>
+      <view class="history-summary">{{selectedCell}}</view>
+      <view class="history-note">共 {{sampleCount}} 条实际记录；两段之间不采集，不将其当作漏采。</view>
+    </block>
+  </block>
+  <view class="history-note">法定假期与调休工作日自动识别。仅早晚高峰采集，上线前的历史无法补回。此页面不是实时车位查询。</view>
+</view>

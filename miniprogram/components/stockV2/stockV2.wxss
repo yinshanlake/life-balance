@@ -1,0 +1,162 @@
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.inset-0 {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.fade-in-out {
+  transition: opacity 1s ease-in-out;
+}
+
+[hidden] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stock-bg {
+  background: linear-gradient(102.61deg, #f2f5fe 7.34%, #f4f6f8 94.6%);
+}
+
+.stock-title {
+  color: #424242;
+}
+
+.text-is-top {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.text-card-deep {
+  color: #919bac;
+}
+
+.stock-status {
+  color: #919bac;
+  font-size: 16rpx;
+  line-height: 22rpx;
+}
+
+@keyframes rotate-bounce-shake {
+  0% {
+    transform: rotate(0deg);
+  }
+  20% {
+    transform: rotate(-180deg);
+  }
+  70% {
+    transform: rotate(-230deg);
+  }
+  90% {
+    transform: rotate(-110deg);
+  }
+
+  100% {
+    transform: rotate(-180deg);
+  }
+}
+
+.rotate-animation {
+  animation: rotate-bounce-shake 1.5s cubic-bezier(1, 0.05, 0.3, 1) infinite;
+}
+
+.dots {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 16px;
+}
+
+.dot {
+  width: 4px;
+  height: 4px;
+  background-color: #ccc;
+  border-radius: 50%;
+  animation: bounce 2s infinite ease-in-out;
+}
+
+.dot:nth-child(1) {
+  animation-delay: -1.5s;
+}
+.dot:nth-child(2) {
+  animation-delay: -1s;
+}
+.dot:nth-child(3) {
+  animation-delay: 0s;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    background-color: #eee;
+  }
+  50% {
+    background-color: #777;
+  }
+}
+
+/* code #1 */
+.text-loading span {
+  animation: text-loading 1.4s infinite alternate;
+}
+
+.text-loading span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.text-loading span:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.text-loading span:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.text-loading span:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.text-loading span:nth-child(5) {
+  animation-delay: 0.4s;
+}
+
+.text-loading span:nth-child(6) {
+  animation-delay: 0.5s;
+}
+
+.text-loading span:nth-child(7) {
+  animation-delay: 0.6s;
+}
+
+.text-loading span:nth-child(8) {
+  animation-delay: 0.7s;
+}
+
+.text-loading span:nth-child(9) {
+  animation-delay: 0.8s;
+}
+
+.text-loading span:nth-child(10) {
+  animation-delay: 0.9s;
+}
+
+.text-loading span:nth-child(11) {
+  animation-delay: 1s;
+}
+
+@keyframes text-loading {
+  0% {
+    color: #b2caa7;
+  }
+  100% {
+    color: #a59aca;
+  }
+}

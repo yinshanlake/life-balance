@@ -1,0 +1,185 @@
+<template name="popular-skeleton">
+  <swiper class="mt-4 h-36" previous-margin="60rpx" next-margin="60rpx">
+    <swiper-item wx:for="{{[1,2,3]}}" wx:key="*this">
+      <view class="h-full mr-2">
+        <view class="gradient-bg rounded-lg p-4 py-5 h-full flex skeleton-animate">
+          <view class="w-32 h-full flex-shrink-0 skeleton-bg rounded-lg" />
+          <view class="ml-4 flex flex-col justify-center flex-1 gap-2">
+            <view class="h-6 skeleton-bg rounded w-24" />
+            <view class="flex gap-2 mt-2">
+              <view class="h-6 skeleton-bg rounded w-14" />
+              <view class="h-6 skeleton-bg rounded w-14" />
+              <view class="h-6 skeleton-bg rounded w-14" />
+            </view>
+          </view>
+        </view>
+      </view>
+    </swiper-item>
+  </swiper>
+</template>
+<template name="category-skeleton">
+  <scroll-view scroll-x="true" class="whitespace-nowrap plr mt-4">
+    <view class="inline-flex gap-7">
+      <view wx:for="{{[1,2,3,4,5]}}" wx:key="*this" class="h-5 w-14 skeleton-bg rounded-lg skeleton-animate"></view>
+    </view>
+  </scroll-view>
+</template>
+<template name="product-list-skeleton">
+  <view class="mt-4 plr">
+    <view wx:for="{{[1,2,3,4]}}" wx:key="*this" class="mb-4 bg-white rounded-lg">
+      <view class="p-4 border-gray-light rounded-lg">
+        <!-- Title Area Skeleton -->
+        <view class="flex items-center justify-between gap-2 mb-2">
+          <view class="flex items-center gap-2">
+            <view class="w-8 h-4 skeleton-bg rounded skeleton-animate" />
+            <view class="w-64 h-4 skeleton-bg rounded skeleton-animate" />
+          </view>
+          <view class="w-6 h-3 skeleton-bg rounded skeleton-animate" />
+        </view>
+        <!-- Description Skeleton -->
+        <view class="w-full h-4 skeleton-bg rounded skeleton-animate mb-2" />
+        <!-- Pictures -->
+        <view class="flex items-center gap-2 mb-6">
+          <view class="w-20 h-20 skeleton-bg skeleton-animate" />
+          <view class="w-20 h-20 skeleton-bg skeleton-animate" />
+          <view class="w-20 h-20 skeleton-bg skeleton-animate" />
+        </view>
+        <!-- Bottom Section Skeleton -->
+        <view class="mt-2 flex items-center justify-between">
+          <view class="flex items-center gap-2">
+            <view class="w-8 h-8 skeleton-bg rounded-lg skeleton-animate" />
+            <view class="flex flex-col gap-1">
+              <view class="w-16 h-3 skeleton-bg rounded skeleton-animate" />
+              <view class="w-20 h-3 skeleton-bg rounded skeleton-animate" />
+            </view>
+          </view>
+          <view class="flex items-center gap-2dot5">
+            <view class="flex flex-col items-center">
+              <view class="w-14 h-4 skeleton-bg rounded skeleton-animate" />
+              <view class="w-16 h-3 skeleton-bg rounded skeleton-animate mt-1" />
+            </view>
+            <view class="w-16 h-7 skeleton-bg rounded-full skeleton-animate" />
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+<template name="luck-draw-skeleton">
+  <view class="plr">
+    <!-- Image Carousel Skeleton -->
+    <view class="w-full h-80 mb-6 bg-gray-100 skeleton-animate rounded-lg" />
+    <!-- Title Skeleton -->
+    <view class="mb-4">
+      <view class="w-20 h-3 bg-gray-100 rounded skeleton-animate mb-1" />
+      <view class="w-48 h-5 bg-gray-100 rounded skeleton-animate" />
+    </view>
+    <!-- Drawn Time Skeleton -->
+    <view class="mb-4">
+      <view class="w-16 h-3 bg-gray-100 rounded skeleton-animate mb-1" />
+      <view class="w-32 h-4 bg-gray-100 rounded skeleton-animate" />
+    </view>
+    <!-- Status Skeleton -->
+    <view class="mb-5">
+      <view class="w-16 h-3 bg-gray-100 rounded skeleton-animate mb-2" />
+      <view class="h-24 bg-gray-100 rounded-lg skeleton-animate">
+        <view class="flex flex-wrap gap-2 justify-center pt-6">
+          <view wx:for="{{[1,2,3]}}" wx:key="*this" class="flex flex-col items-center">
+            <view class="w-6 h-6 rounded-full bg-gray-100 skeleton-animate" />
+            <view class="w-12 h-2 bg-gray-100 rounded skeleton-animate mt-1" />
+          </view>
+        </view>
+      </view>
+    </view>
+    <!-- Participants Skeleton -->
+    <view>
+      <view class="w-24 h-3 bg-gray-100 rounded skeleton-animate mb-2" />
+    </view>
+    <!-- Description Skeleton -->
+    <view>
+      <view class="w-20 h-3 bg-gray-100 rounded skeleton-animate mb-1" />
+      <view class="w-full h-16 bg-gray-100 rounded skeleton-animate" />
+    </view>
+  </view>
+</template>
+<template name="partner-merchant-skeleton">
+  <view class="mt-4 plr">
+    <!-- Skeleton List -->
+    <view wx:for="{{[1, 2, 3, 4]}}" wx:key="*this" class="flex flex-col p-6 pb-4 bg-white rounded-lg mb-4">
+      <!-- Top Section -->
+      <view class="flex items-center gap-4">
+        <view class="w-12 h-12 skeleton-bg rounded skeleton-animate" />
+        <view class="flex-1">
+          <view class="mt-1 w-2on5 h-5 skeleton-bg rounded skeleton-animate" />
+          <view class="mt-3 w-4on5 h-3 skeleton-bg rounded skeleton-animate" />
+        </view>
+      </view>
+      <!-- Promotions -->
+      <view class="mt-9 flex items-center gap-2">
+        <view class="w-14 h-6 skeleton-bg rounded skeleton-animate" />
+        <!-- <view class="flex flex-wrap gap-2">
+          <view wx:for="{{[1, 2, 3]}}" wx:key="*this" class="w-14 h-4 skeleton-bg rounded skeleton-animate" />
+        </view> -->
+      </view>
+      <!-- Separator -->
+      <view class="h-px bg-gray-100 my-4"></view>
+      <!-- Bottom Section -->
+      <view class="flex items-center justify-between">
+        <view class="flex items-center gap-4">
+          <view class="flex items-center">
+            <view wx:for="{{[1, 2, 3]}}" wx:key="*this" class="w-6 h-6 skeleton-bg rounded-full skeleton-animate {{index !== 0 ? '-ml-2' : ''}}"></view>
+          </view>
+          <view class="mt-1 w-20 h-3 skeleton-bg rounded skeleton-animate" />
+        </view>
+        <view class="mt-1 w-4 h-4 skeleton-bg rounded skeleton-animate" />
+      </view>
+    </view>
+  </view>
+</template>
+<template name="perk-detail-skeleton">
+  <view class="plr pt-8 pb-safe-area flex flex-col min-perk-detail-height">
+    <!-- Skeleton for Partner Merchant Info -->
+    <view class="bg-white rounded-lg pt-5 px-3 py-4 mb-4 skeleton-animate">
+      <view class="px-2 flex items-center gap-3">
+        <!-- <view class="w-9 h-6 skeleton-bg rounded-md skeleton-animate"></view> -->
+        <view class="mt-1dot5 w-2on5 h-5 skeleton-bg rounded skeleton-animate"></view>
+      </view>
+      <view class="px-2 flex items-center gap-4 mt-5dot5">
+        <view class="w-14 h-5 skeleton-bg rounded skeleton-animate"></view>
+        <!-- <view class="flex flex-wrap gap-2">
+          <view wx:for="{{[1,2,3]}}" wx:key="*this" class="w-14 h-4 skeleton-bg rounded skeleton-animate"></view>
+        </view> -->
+      </view>
+      <view class="px-2">
+        <view class="h-px bg-gray-100 w-full mt-4"></view>
+      </view>
+      <view class="mt-5 px-2">
+        <view class="h-4 w-20 skeleton-bg rounded skeleton-animate"></view>
+        <view class="h-3 w-full skeleton-bg rounded mt-2 skeleton-animate"></view>
+      </view>
+      <view class="mt-8">
+        <view class="ml-2 h-4 w-20 skeleton-bg rounded skeleton-animate"></view>
+        <view class="ml-2 h-3 w-64 skeleton-bg rounded mt-1dot5 skeleton-animate"></view>
+        <view class="mt-2 ml-2 w-full h-32 skeleton-bg rounded-lg skeleton-animate"></view>
+      </view>
+    </view>
+    <!-- Skeleton for Comments Section -->
+    <view class="bg-white rounded-lg px-3 pt-5 py-4 mb-2 flex flex-col flex-1">
+      <view class="h-4 w-32 skeleton-bg rounded ml-2 skeleton-animate"></view>
+      <view class="mt-4 flex flex-col gap-4">
+        <view wx:for="{{[1,2,3]}}" wx:key="*this" class="flex flex-col items-start gap-3 bg-comment-item rounded-lg p-4">
+          <view class="flex items-center gap-3">
+            <view class="w-9 h-9 skeleton-bg rounded-full skeleton-animate"></view>
+            <view class="flex-1">
+              <view class="h-3 w-32 skeleton-bg rounded skeleton-animate"></view>
+              <view class="h-3 w-48 skeleton-bg rounded mt-2 skeleton-animate"></view>
+            </view>
+          </view>
+          <view class="h-4 w-full skeleton-bg rounded mt-2 skeleton-animate"></view>
+        </view>
+      </view>
+    </view>
+    <!-- Skeleton for Comment Button -->
+    <view class="fixed z-10 bottom-safe-area left-0 right-0 bg-comment text-white rounded-full text-center text-sm h-8 px-4 py-2 mx-8 skeleton-bg"></view>
+  </view>
+</template>

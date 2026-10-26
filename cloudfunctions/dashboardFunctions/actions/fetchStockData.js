@@ -1,69 +1,58 @@
-const cloud = require('wx-server-sdk');
-const rp = require('request-promise');
-const SYMBOL_MSFT = 'MSFT';
+const {
+  getStockData,
+  cacheOperations,
+  isNasdaqTradingHours,
+} = require('../lib/stock-utils');
 
-cloud.init({
-  env: cloud.DYNAMIC_CURRENT_ENV
-});
+const SYMBOLS = ['MSFT', 'AAPL', 'NVDA', 'GOOG'];
 
-exports.main = async (data, context) => {
-  const symbols = ['MSFT', 'AAPL', 'NVDA', 'GOOG'];
+exports.main = async () => {
+  try {
+    const [cachedData, isTrading] = await Promise.all([
+      cacheOperations.get(),
+      isNasdaqTradingHours(),
+    ]);
 
-  var option = {
-    uri: `http://hq.sinajs.cn/list=gb_msft,gb_aapl,gb_nvda,gb_goog`,
-    headers: {
-      'Referer': 'https://stock.finance.sina.com.cn/',
-    },
-    json: false,
-  }
+    const { stocks, dataSource, fromCache } = await getStockData(
+      SYMBOLS,
+      isTrading,
+      cachedData
+    );
 
-  const stockStringList = (await rp.get(option)).split('\n');
-  console.log(stockStringList);
-
-  let top1 = {
-    mktcap: 0
-  }
-  let msft = {
-
-  }
-
-  let stocks = [];
-
-  for (var i = 0; i < stockStringList.length; i++) {
-    const item = stockStringList[i];
-    if (!item) {
-      continue;
+    if (!stocks || stocks.length === 0) {
+      throw new Error('No stock data retrieved');
     }
 
-    const stockInfoArray = item.match(/\"(.*?)\"/)[1].split(',');
-    const mktcap = stockInfoArray[12];
-    const symbol = symbols[i];
+    stocks.sort((a, b) => parseFloat(b.mktcap) - parseFloat(a.mktcap));
+    const top1 = stocks[0];
+    const msft = stocks.find((stock) => stock.symbol === 'MSFT');
 
-    stocks.push({
-      symbol,
-      mktcap,
-    })
+    const responseData = {
+      top1,
+      msft: msft ? { ...msft, change: msft.formattedChange } : null,
+      stocks,
+      timestamp: Date.now(),
+      dataSource,
+    };
 
-    if (mktcap > top1.mktcap) {
-      top1.mktcap = mktcap;
-      top1.symbol = symbol;
+    if (!fromCache) {
+      await cacheOperations.update(responseData);
     }
 
-    if (symbol === 'MSFT') {
-      msft.change = stockInfoArray[2];
-      msft.price = parseFloat(stockInfoArray[1]).toFixed(2) + "";
-      msft.mktcap = mktcap;
-      msft.symbol = symbol;
-    }
+    return {
+      code: 0,
+      message: 'success',
+      data: {
+        ...responseData,
+        fromCache,
+      },
+    };
+  } catch (error) {
+    console.error('Failed to fetch stock data:', error);
+    return {
+      code: -1,
+      message: error.message || 'Failed to fetch stock data',
+      data: null,
+    };
   }
-  
-  stocks.sort((a, b) => {
-    return b.mktcap - a.mktcap
-  })
-
-  return {
-    top1,
-    msft,
-    stocks
-  }
-}
+};

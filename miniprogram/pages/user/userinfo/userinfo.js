@@ -1,19 +1,51 @@
-const userRepo = require('../../../repository/userRepo');
-
+import {
+  updateUserInfo,
+  uploadFiles,
+  fetchUserInfo,
+} from "../../../repository/userRepo";
 const app = getApp();
-Page({
 
-  /**
-   * 页面的初始数据
-   */
+Page({
   data: {
     photos: [],
+  },
+
+  handleAvatarChosen() {
+    const that = this;
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ["image"],
+      sizeType: ["original"],
+      sourceType: ["album", "camera"],
+      maxDuration: 30,
+      camera: "back",
+      success(res) {
+        console.log("Success", res);
+        that.upLoadImg(res.tempFiles[0].tempFilePath);
+      },
+    });
+  },
+
+  upLoadImg(fileUrl) {
+    const that = this;
+    wx.cloud.uploadFile({
+      cloudPath: `avatars/${Date.now()}-${Math.floor(
+        Math.random() * 1000
+      )}.png`,
+      filePath: fileUrl,
+      success: (res) => {
+        that.setData({
+          avatarUrl: res.fileID,
+        });
+      },
+      fail: console.error,
+    });
   },
 
   onBirthdayPicked(e) {
     const birthday = e.detail.value;
     this.setData({
-      birthday
+      birthday,
     });
   },
 
@@ -21,60 +53,51 @@ Page({
     const hometown = e.detail.value;
     hometown.splice(0, 1);
     this.setData({
-      hometown: hometown.join("")
+      hometown: hometown.join(""),
+    });
+  },
+
+  onPhoneNumberInput(e) {
+    const phonedNumber = e.detail.value.replace(/\D/g, "");
+    this.setData({
+      phoneNumber: phonedNumber,
     });
   },
 
   onUserInfoSubmit(e) {
-    const {
-      height,
-      school,
-      desc,
-      occupation,
-      contact
-    } = e.detail.value;
-    const {
-      birthday,
-      hometown,
-      photos,
-      company
-    } = this.data;
+    const { height, school, desc, occupation, contact, address, nickName } =
+      e.detail.value;
+    const { birthday, hometown, photos, company, phoneNumber, avatarUrl } =
+      this.data;
 
-    const userInfo = {};
-
-    if (contact) {
-      userInfo.contact = contact;
-    } else if (company) {
+    if (!nickName || nickName.trim() === "") {
       wx.showToast({
-        icon: 'none',
-        title: 'You must set contact',
-      })
-
+        icon: "none",
+        title: "You must set nickname",
+      });
       return;
     }
 
-    if (height) {
-      userInfo.height = height;
-    }
+    const userInfo = {
+      nickName: nickName,
+      height: height || "",
+      school: school || "",
+      desc: desc || "",
+      occupation: occupation || "",
+      contact: contact || "",
+      address: address || "",
+      birthday: birthday || "",
+      hometown: hometown || "",
+      phoneNumber: phoneNumber || "",
+      avatarUrl: avatarUrl || "",
+    };
 
-    if (school) {
-      userInfo.school = school;
-    }
-
-    if (birthday) {
-      userInfo.birthday = birthday;
-    }
-
-    if (hometown) {
-      userInfo.hometown = hometown;
-    }
-
-    if (desc) {
-      userInfo.desc = desc;
-    }
-
-    if (occupation) {
-      userInfo.occupation = occupation;
+    if (!userInfo.contact && company) {
+      wx.showToast({
+        icon: "none",
+        title: "You must set contact",
+      });
+      return;
     }
 
     if (photos) {
@@ -82,33 +105,36 @@ Page({
     }
 
     wx.showLoading();
-    userRepo.updateUserInfo(app.globalData.userInfo._id, userInfo).then(res => {
-      wx.hideLoading();
-      wx.navigateBack({
-        delta: 1,
-      })
-    });
+
+    const updateProfile = () => {
+      updateUserInfo(app.globalData.userInfo._id, userInfo).then(() => {
+        wx.hideLoading();
+        wx.navigateBack({
+          delta: 1,
+        });
+      });
+    };
+
+    updateProfile();
   },
 
   uploadFile(tempFile) {
     console.log(tempFile);
 
     return new Promise((resolve, reject) => {
-      userRepo.uploadFiles(tempFile.tempFilePaths, 'userphotos').then(urls => {
+      uploadFiles(tempFile.tempFilePaths, "userphotos").then((urls) => {
         resolve({
-          urls
-        })
-      })
-    })
+          urls,
+        });
+      });
+    });
   },
 
   onUploadSuccess(e) {
-    let {
-      photos
-    } = this.data;
+    let { photos } = this.data;
     photos.push(...e.detail.urls);
     this.setData({
-      photos
+      photos,
     });
   },
 
@@ -116,27 +142,24 @@ Page({
     const { photos } = this.data;
     photos.splice(e.detail.index, 1);
     this.setData({
-      photos
-    })
+      photos,
+    });
   },
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
-  onLoad: function (options) {
-    userRepo.fetchUserInfoOrSignup().then(userInfo => {
+  onLoad(options) {
+    fetchUserInfo().then((userInfo) => {
       const files = [];
       if (userInfo.photos) {
         for (const photo of userInfo.photos) {
           files.push({
-            url: photo
-          })
+            url: photo,
+          });
         }
       }
 
-      console.log(userInfo.photos);
-
       this.setData({
+        nickName: userInfo.nickName,
+        avatarUrl: userInfo.avatarUrl,
         company: userInfo.company,
         birthday: userInfo.birthday,
         height: userInfo.height,
@@ -146,61 +169,18 @@ Page({
         occupation: userInfo.occupation,
         contact: userInfo.contact,
         files,
-        photos: userInfo.photos || []
-      })
+        photos: userInfo.photos || [],
+        phoneNumber: userInfo.phoneNumber,
+        address: userInfo.address,
+      });
     });
 
     this.setData({
-      uploadFile: this.uploadFile.bind(this)
-    })
+      uploadFile: this.uploadFile.bind(this),
+    });
   },
 
-  /**
-   * 生命周期函数--监听页面初次渲染完成
-   */
-  onReady: function () {
+  onShareAppMessage() {},
 
-  },
-
-  /**
-   * 生命周期函数--监听页面显示
-   */
-  onShow: function () {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面隐藏
-   */
-  onHide: function () {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面卸载
-   */
-  onUnload: function () {
-
-  },
-
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
-  onPullDownRefresh: function () {
-
-  },
-
-  /**
-   * 页面上拉触底事件的处理函数
-   */
-  onReachBottom: function () {
-
-  },
-
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage: function () {
-
-  }
-})
+  onShareTimeline() {},
+});

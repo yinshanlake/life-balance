@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "openapi": ["subscribeMessage.send"]
+  },
+  "triggers": [
+    {
+      "name": "luckDrawCheck",
+      "type": "timer",
+      "config": "2 0 10,16,18 * * * *"
+    }
+  ]
+}

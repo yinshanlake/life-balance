@@ -1,0 +1,34 @@
+<scroll-view scroll-y="true" class="main">
+  <view style="height:100px; padding-top: {{statusBarHeight + toolbarHeight}}px; margin-top: 32rpx;" class="flex flex-col">
+    <view class="ml-2 flex flex-col gap-1">
+      <view class="user-name">Hi, {{userInfo ? userInfo.nickName : 'Friend!'}}</view>
+      <view class="user-welcome-message margin-top-xs">
+        {{nowDateInEnglish}} - {{welcomeMessage}}
+      </view>
+    </view>
+  </view>
+  <view class="mt-12">
+    <stockV2></stockV2>
+  </view>
+  <view class="text-gray-400 text-xs mt-6">微软(中国)有限公司 - 苏州</view>
+  <view class="flex flex-col gap-2 mt-2 pb-4">
+    <!-- Parking Space -->
+    <commuteV2 class="w-full"></commuteV2>
+    <view class="flex gap-2">
+      <!-- Canteen -->
+      <canteenV2 class="flex-1 h-menu-partner-merchant"></canteenV2>
+      <!-- Perks -->
+      <partnerMerchant class="flex-1 h-menu-partner-merchant"></partnerMerchant>
+    </view>
+    <!-- Luck Draw -->
+    <luck-draw-card />
+    <!-- <view class="flex gap-2">
+      <view class="flex-1">
+        <latestCircle></latestCircle>
+      </view>
+      <view class="flex-1">
+        <upcomingActivity></upcomingActivity>
+      </view>
+    </view> -->
+  </view>
+</scroll-view>

@@ -1,0 +1,210 @@
+import { getWeekdayIndexStr } from "../../common/util";
+import {
+  navigateToBusInfo,
+  navigateToParkingHistory,
+  navigationToAppConfigWebView,
+} from "../../pages/router";
+import {
+  fetchLastWeekParkingFullTime,
+  fetchParkingSpace,
+  recordParkingFull,
+} from "../../repository/dashboardRepo";
+
+const EMPTY_COLOR = "#3679EE";
+const BUSY_COLOR = "#FF593B";
+const SPACES_PER_INDICATOR = 45;
+const MIN_INDICATOR_DISPLAY_USED_PERCENT = 97;
+const PARKING_CACHE_KEY = "parking-space:last-known:v1";
+
+Component({
+  options: {
+    addGlobalClass: true,
+  },
+  data: {
+    parkingConfig: {
+      b25: { maxSpaces: 508 },
+      zhongmeng: { maxSpaces: 205 },
+    },
+    loadingParkingSpace: true,
+    hasParkingData: false,
+    parkingInitialized: false,
+    parkingSpace: {
+      b25: {
+        remaining: 508,
+        usedPercent: 0,
+        initialColor: EMPTY_COLOR,
+        finalColor: EMPTY_COLOR,
+        remainingIndicatorCount: 0,
+        indicators: [],
+      },
+      zhongmeng: {
+        remaining: 205,
+        usedPercent: 0,
+        initialColor: EMPTY_COLOR,
+        finalColor: EMPTY_COLOR,
+        remainingIndicatorCount: 0,
+        indicators: [],
+      },
+    },
+  },
+
+  lifetimes: {
+    attached() {
+      this._parkingDetached = false;
+      this._parkingRequestId = 0;
+      this.initIndicators();
+      this.restoreParkingCache();
+      this.fetchParkingData();
+      this.fetchParkingSpacePredictionData();
+    },
+    detached() {
+      this._parkingDetached = true;
+    },
+  },
+
+  methods: {
+    restoreParkingCache() {
+      try {
+        const cached = wx.getStorageSync(PARKING_CACHE_KEY);
+        if (cached) {
+          this.setData({
+            parkingSpace: this.buildParkingData(cached),
+            hasParkingData: true,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to restore parking spaces:", error);
+      }
+      // Mount the reels only after restoring the starting value, avoiding a capacity flash.
+      this.setData({ parkingInitialized: true });
+    },
+
+    buildParkingData(parkingSpaceData) {
+      const updatedParkingData = {};
+      Object.keys(this.data.parkingConfig).forEach((key) => {
+        const maxSpaces = this.data.parkingConfig[key].maxSpaces;
+        const indicatorCount = this.data.parkingSpace[key].indicatorCount;
+        const rawRemaining = parkingSpaceData?.[key];
+        const remaining = Number(rawRemaining);
+        if (
+          rawRemaining === null || rawRemaining === undefined || rawRemaining === "" ||
+          !Number.isInteger(remaining) || remaining < 0
+        ) {
+          throw new Error("Invalid parking count");
+        }
+        const used = maxSpaces - remaining;
+        const usedPercent =
+          Math.floor((used / maxSpaces) * 100) >=
+            MIN_INDICATOR_DISPLAY_USED_PERCENT &&
+          Math.floor((used / maxSpaces) * 100) < 100
+            ? MIN_INDICATOR_DISPLAY_USED_PERCENT
+            : Math.floor((used / maxSpaces) * 100);
+        const remainingPercent = Math.floor((remaining / maxSpaces) * 100);
+
+        updatedParkingData[key] = {
+          remaining,
+          used,
+          usedPercent,
+          remainingPercent,
+          initialColor: EMPTY_COLOR,
+          finalColor: usedPercent >= 90 ? BUSY_COLOR : EMPTY_COLOR,
+          indicatorCount,
+        };
+      });
+      return updatedParkingData;
+    },
+
+    initIndicators() {
+      const { parkingConfig } = this.data;
+      const b25IndicatorCount = Math.round(
+        parkingConfig.b25.maxSpaces / SPACES_PER_INDICATOR
+      );
+      const zhongmengIndicatorCount = Math.round(
+        parkingConfig.zhongmeng.maxSpaces / SPACES_PER_INDICATOR
+      );
+      this.setData({
+        "parkingSpace.b25.indicatorCount": b25IndicatorCount,
+        "parkingSpace.zhongmeng.indicatorCount": zhongmengIndicatorCount,
+      });
+    },
+    refresh() {
+      this.initIndicators();
+      this.setData({
+        loadingParkingSpace: true,
+      });
+      this.fetchParkingData();
+    },
+
+    toShuttleBusDetail() {
+      navigateToBusInfo();
+    },
+
+    toParkingHistory() {
+      navigateToParkingHistory();
+    },
+
+    toParkingTip() {
+      navigationToAppConfigWebView("parkingTip");
+    },
+
+    toShuttleTip() {
+      navigationToAppConfigWebView("shuttleTip");
+    },
+
+    fetchParkingSpacePredictionData() {
+      fetchLastWeekParkingFullTime().then((res) => {
+        if (this._parkingDetached) return;
+        let lastParkingFullTimeStr = "";
+        let dayStrPrefix = "上周" + getWeekdayIndexStr(new Date());
+        if (res) {
+          const lastParkingFullTime = new Date(res).hhmm();
+          lastParkingFullTimeStr = `${dayStrPrefix} B25 停满时间：${lastParkingFullTime}`;
+        } else {
+          lastParkingFullTimeStr = `${dayStrPrefix} B25 车位充足`;
+        }
+        this.setData({
+          lastParkingFullTimeStr,
+        });
+      });
+    },
+
+    fetchParkingData() {
+      const requestId = ++this._parkingRequestId;
+      return fetchParkingSpace().then((parkingSpaceData) => {
+        if (this._parkingDetached || requestId !== this._parkingRequestId) return;
+        const updatedParkingData = this.buildParkingData(parkingSpaceData);
+
+        // record parking full
+        const now = new Date();
+        if (now.getHours() >= 9 && now.getHours() <= 13) {
+          const leftSpace = parkingSpaceData.b25;
+          if (leftSpace <= 3) {
+            recordParkingFull(Date.now());
+          } else if (leftSpace <= 10) {
+            recordParkingFull(null, null, Date.now());
+          } else if (leftSpace <= 20) {
+            recordParkingFull(null, Date.now(), null);
+          }
+        }
+
+        this.setData({
+          parkingSpace: updatedParkingData,
+          loadingParkingSpace: false,
+          hasParkingData: true,
+        });
+        try {
+          wx.setStorageSync(PARKING_CACHE_KEY, {
+            b25: updatedParkingData.b25.remaining,
+            zhongmeng: updatedParkingData.zhongmeng.remaining,
+          });
+        } catch (error) {
+          console.error("Failed to cache parking spaces:", error);
+        }
+      }).catch((error) => {
+        if (this._parkingDetached || requestId !== this._parkingRequestId) return;
+        console.error("Failed to fetch parking spaces:", error);
+        this.setData({ loadingParkingSpace: false });
+      });
+    },
+  },
+});

@@ -1,70 +1,159 @@
-const app = getApp();
-const activityRepo = require('../../repository/activityRepo');
-const userRepo = require('../../repository/userRepo');
-const router = require('../router');
+import { getAppConfig } from "../../repository/baseRepo";
+import { fetchAllSponsors as _fetchAllSponsors } from "../../repository/sponsorRepo";
+import {
+  fetchUserInfo as _fetchUserInfo,
+  fetchCompany,
+  updateUserInfo,
+} from "../../repository/userRepo";
+import {
+  navigateToAdmin,
+  navigateToAuth,
+  navigateToCMS,
+  navigateToEditUserInfo,
+  navigateToPendingAuthListPage,
+  navigateToProfile,
+  navigateToUserActivity,
+  navigateToUserProduct,
+  navigationToContribution,
+} from "../router";
 
 Component({
   options: {
-    addGlobalClass: true
+    addGlobalClass: true,
   },
-
-  /**
-   * 组件的属性列表
-   */
-  properties: {
-
-  },
-
-  /**
-   * 组件的初始数据
-   */
+  properties: {},
   data: {
-
+    github: "https://github.com/Yat3s/life-balance",
+    isProcessingPayment: false,
+    amounts: [
+      { value: 6, label: "❤️ 6 CNY" },
+      { value: 16, label: "☕️ 16 CNY" },
+      { value: 36, label: "🚗 36 CNY" },
+      { value: 66, label: "✈️ 66 CNY" },
+      { value: 88, label: "🚀 88 CNY" },
+    ],
   },
 
-  /**
-   * 组件的方法列表
-   */
   methods: {
-    onActivityClick(e) {
-      router.navigateToUserActivity();
+    handleAvatarChosen() {
+      const that = this;
+      wx.chooseMedia({
+        count: 1,
+        mediaType: ["image"],
+        sizeType: ["original"],
+        sourceType: ["album", "camera"],
+        maxDuration: 30,
+        camera: "back",
+        success(res) {
+          console.log("Success", res);
+          that.upLoadImg(res.tempFiles[0].tempFilePath);
+        },
+      });
     },
 
-    onProfileClick(e) {
-      router.navigateToProfile(this.data.userInfo._id);
+    upLoadImg(fileUrl) {
+      const that = this;
+      wx.cloud.uploadFile({
+        cloudPath: `avatars/${Date.now()}-${Math.floor(
+          Math.random() * 1000
+        )}.png`,
+        filePath: fileUrl,
+        success: (res) => {
+          const updateData = {
+            avatarUrl: res.fileID,
+          };
+
+          updateUserInfo(that.data.userInfo._id, updateData).then(() => {
+            that.setData({
+              userInfo: { ...that.data.userInfo, avatarUrl: res.fileID },
+            });
+          });
+        },
+        fail: console.error,
+      });
     },
 
-    onEditUserInfoClick(e) {
-      router.navigateToEditUserInfo();
+    onAdminConsoleClick() {
+      navigateToCMS();
     },
 
-    onContributionClick(e) {
-      router.navigationToContribution();
+    onActivityClick() {
+      navigateToUserActivity();
+    },
+
+    onProfileClick() {
+      navigateToProfile(this.data.userInfo._id);
+    },
+
+    onMallClick() {
+      navigateToUserProduct();
+    },
+
+    onEditUserInfoClick() {
+      navigateToEditUserInfo();
+    },
+
+    onContributionClick() {
+      wx.reportEvent("contributiontap", {});
+      navigationToContribution();
+    },
+
+    onStarClick() {
+      wx.reportEvent("githubtap", {});
+      this.setData(
+        {
+          showingModal: "github",
+        },
+        () => {
+          this.onCopyGithubUrl();
+        }
+      );
+    },
+
+    onCopyGithubUrl() {
+      wx.setClipboardData({
+        data: this.data.github,
+        success: () => {
+          wx.showToast({
+            title: "Copied to clipboard",
+            icon: "success",
+            duration: 2000,
+          });
+        },
+      });
+    },
+
+    onHideModal() {
+      this.setData({
+        showingModal: null,
+      });
     },
 
     onActivityManageClick() {
-      router.navigateToAdmin();
+      navigateToAdmin();
     },
+
     onSettingCompanyClick() {
-      router.navigateToAuth();
-    }, 
-    
+      navigateToAuth();
+    },
+
     onSponsorClick() {
+      wx.reportEvent("sponsortap", {});
       this.setData({
-        showingModal: 'sponsor'
-      })
+        showingModal: "sponsor",
+      });
     },
 
     onFeedbackClick() {
       this.setData({
-        showingModal: 'feedback'
-      })
+        showingModal: "feedback",
+      });
     },
 
     onDismissModal() {
       this.setData({
-        showingModal: ''
-      })
+        showingModal: "",
+      });
     },
 
     onCopyId() {
@@ -72,28 +161,87 @@ Component({
       wx.setClipboardData({
         data: userInfo.id,
       });
-    }
+    },
+
+    fetchUserInfo() {
+      _fetchUserInfo().then((userInfo) => {
+        userInfo.id = userInfo._openid.substring(0, 16);
+        userInfo.isAdmin = userInfo.role === 1024;
+        this.setData({
+          userInfo,
+        });
+
+        if (userInfo.company) {
+          fetchCompany(userInfo.company).then((company) => {
+            this.setData({ company });
+          });
+        }
+      });
+    },
+
+    onSelectAmount(e) {
+      const amount = e.currentTarget.dataset.amount;
+      wx.navigateTo({
+        url: `/pages/user/sponsor/sponsor?amount=${amount}`,
+      });
+      this.onHideModal();
+    },
+
+    onOtherAmountClick() {
+      wx.navigateTo({
+        url: "/pages/user/sponsor/sponsor?type=otherAmount",
+      });
+      this.onHideModal();
+    },
+
+    fetchAllSponsors() {
+      _fetchAllSponsors().then((res) => {
+        const userLatestDonations = new Map();
+
+        res.data.forEach((sponsor) => {
+          const existingDonation = userLatestDonations.get(
+            sponsor.user._openid
+          );
+
+          // If this user hasn't been seen yet or if this donation is more recent
+          if (!existingDonation || sponsor.paidAt > existingDonation.paidAt) {
+            userLatestDonations.set(sponsor.user._openid, sponsor);
+          }
+        });
+
+        const uniqueSponsors = Array.from(userLatestDonations.values()).sort(
+          (a, b) => b.paidAt - a.paidAt
+        );
+
+        this.setData({
+          sponsors: uniqueSponsors,
+        });
+      });
+    },
+
+    onAvatarClick(e) {
+      const userId = e.currentTarget.dataset.id;
+      navigateToProfile(userId);
+    },
   },
 
   pageLifetimes: {
     show() {
-
-    }
+      this.fetchUserInfo();
+    },
   },
+
   lifetimes: {
     attached() {
-      userRepo.fetchUserInfo().then(userInfo => {
-        userInfo.id = userInfo._openid.substring(0, 16);
+      wx.reportEvent("userpageload", {});
+      this.fetchUserInfo();
+      getAppConfig().then((config) => {
+        const { featureFlags } = config;
         this.setData({
-          userInfo
-        })
-
-        if (userInfo.company) {
-          userRepo.fetchCompany(userInfo.company).then(company => {
-            this.setData({company})
-          })
-        }
-      })
-    }
-  }
-})
+          sponsorPayEnabled: featureFlags.sponsorPay,
+        });
+      });
+      this.fetchAllSponsors();
+    },
+  },
+});

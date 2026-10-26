@@ -1,0 +1,69 @@
+<import src="../../components/skeleton/index.wxml" />
+<toolbar bgColor="bg-white" isBack="{{true}}">
+  <view slot="backText" class="text-sm">活动抽奖</view>
+</toolbar>
+<luck-draw-detail wx:if="{{currentLuckDraw}}" luckDraw="{{currentLuckDraw}}" userInfo="{{userInfo}}" bind:debugDraw="debugDraw" />
+<template wx:if="{{!currentLuckDraw}}" is="luck-draw-skeleton" />
+<block wx:if="{{previousLuckDraws.length > 0}}">
+  <view class="plr mt-12">
+    <view class="text-xs text-drawn-time">往期抽奖</view>
+    <view wx:for="{{previousLuckDraws}}" wx:key="_id" class="mt-2">
+      <view class="flex items-center p-3 rounded-lg bg-luck-draw-history border-gray-light" data-luck-draw="{{item}}" bind:tap="onTapLuckDrawHistory">
+        <image src="{{item.prizeTiers[0].images[0]}}" class="w-16 h-14 rounded-lg bg-gray-200 shrink-0" mode="aspectFill" lazy-load="{{true}}" />
+        <view class="flex flex-col ml-3">
+          <view class="text-xs font-medium mb-3">{{item.series}} {{item.title}}</view>
+          <view class="flex items-center">
+            <view class="text-drawn-time text-xs">中奖用户：</view>
+            <block wx:for="{{item.winners}}" wx:key="ticketId">
+              <view class="relative {{index === 0 ? '' : '-ml-2'}}">
+                <view class="rounded-full border border-solid border-gray-300 shrink-0 w-5 h-5">
+                  <user-avatar useThumbnail className="w-full h-full rounded-full" userInfo="{{item.user}}" />
+                </view>
+                <view wx:if="{{item.user._openid === userInfo._openid}}" class="absolute -top-1 -left-1 w-3 h-3 bg-yellow-400 rounded-full flex items-center justify-center text-white" style="font-size: 8px;">
+                  我
+                </view>
+              </view>
+            </block>
+          </view>
+        </view>
+        <image class="w-3dot5 h-3dot5 ml-auto" src="/images/ic_arrow_r.svg" />
+      </view>
+    </view>
+  </view>
+</block>
+<view class="pb-24" />
+<view wx:if="{{currentLuckDraw && currentLuckDraw.winners.length === 0}}" class="fixed bottom-0 left-0 right-0 p-4 bg-white z-max">
+  <block wx:if="{{!currentLuckDraw.hasParticipated}}">
+    <view class="w-full py-3 text-sm font-normal bg-button text-white rounded-full flex flex-col items-center justify-center" bind:tap="onJoinLuckDraw">
+      <text>观看广告参与抽奖</text>
+    </view>
+  </block>
+  <block wx:elif="{{currentLuckDraw.remainingChances > 0}}">
+    <view class="w-full py-3 text-sm font-normal bg-button text-white rounded-full flex flex-col items-center justify-center" bind:tap="onJoinLuckDraw">
+      <text>观看广告提高中奖概率</text>
+      <text class="text-xxs text-gray-300">当前中奖概率约 {{currentLuckDraw.userWinRate}}%</text>
+    </view>
+  </block>
+  <block wx:else>
+    <view class="flex flex-col">
+      <view class="w-full py-3 text-sm font-normal bg-gray-200 text-gray rounded-full flex flex-col items-center justify-center">
+        <text>已参与抽奖，等待开奖 ⌛️</text>
+        <text class="text-xxs text-gray-400">当前中奖概率约 {{currentLuckDraw.userWinRate}}%</text>
+      </view>
+    </view>
+  </block>
+</view>
+<!-- Ads Desc Modal -->
+<view class="cu-modal {{showingModal === 'ads-desc' ? 'show' : ''}}" bind:tap="hideModal">
+  <view class="cu-dialog rounded-lg bg-white" catch:tap>
+    <view class="p-6 py-8">
+      <view class="text-center mb-4 text-black text-sm">🥺 为什么要看广告？</view>
+      <view class="text-ads-desc text-xs leading-5 text-left">
+        Life Balance 服务器近期运营维护等成本变高，为能持续给大家带来更好的功能和体验，我们选择了一个方式：大家观看30秒小广告参与抽奖，获得的广告收益来支持小程序的运营，感谢大家的理解与支持～
+      </view>
+      <view class="w-full py-2 bg-button text-white rounded-full mt-10 text-sm" bind:tap="hideModal">
+        知道了
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,38 @@
+<view wx:if="{{partnerMerchant}}" bindtap="goToPerks" class="card bg-home-card p-4 rounded-xl flex flex-col h-full relative overflow-hidden">
+  <view class="w-full h-auto">
+    <image src="/images/img_bg_partner_merchant.png" class="w-1on2 h-auto absolute right-0 bottom-0" mode="widthFix" />
+    <view class="absolute right-0 bottom-0 w-1on2 h-2on3 bg-foreground"></view>
+  </view>
+  <view class="relative h-full">
+    <view class="relative w-full">
+      <view class="flex justify-between items-center">
+        <view class="flex items-center gap-1">
+          <view class="text-sm font-bold text-center">合作商家</view>
+          <view class="text-beta">
+            New
+          </view>
+        </view>
+        <image src="/images/ic_home_card_enter.svg" class="w-5dot5 h-5dot5" mode="widthFix" />
+      </view>
+    </view>
+
+    <view class="absolute bottom-0 left-0 overflow-hidden w-full">
+      <view class="flex flex-col gap-2">
+        <view class="text-card text-xs">
+          最新合作
+        </view>
+        <view class="flex items-center gap-2">
+          <view class="w-5 h-5 rounded-full bg-logo">
+            <o-image className="w-5 h-5 rounded-full" url="{{partnerMerchant.logo}}" useThumbnail width="50" height="50" />
+          </view>
+          <view class="flex-1 text-sm font-semibold truncate">
+            {{partnerMerchant.name}}
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+<view wx:if="{{!partnerMerchant}}" class="relative">
+  <view class="shine-home-card rounded-xl w-full h-34dot5"></view>
+</view>

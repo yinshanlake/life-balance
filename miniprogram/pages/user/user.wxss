@@ -1,26 +1,17 @@
-.base-info-container {
-  background: white;
+.main {
+  background: #f8f8f8;
   padding: 200rpx 48rpx 48rpx 48rpx;
+  height: 100vh;
 }
 
 .avatar {
-  border: 8rpx solid #f1f1f1;
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: 50%;
-}
-
-.name {
-  font-weight: bold;
-  font-size: 14pt;
-  line-height: 14pt;
-  color: black;
+  border: 6rpx solid #e5e5e5;
 }
 
 .id-text {
   font-size: 9pt;
   line-height: 9pt;
-  color: var(--textGrey);
+  color: #6c6a6a;
 }
 
 .id-copy {
@@ -43,7 +34,7 @@
 
 .activity-container {
   flex: 1;
-  background: #EBEFFD;
+  background: #ebeffd;
   padding: 20rpx 36rpx;
   display: flex;
   align-items: center;
@@ -86,6 +77,11 @@
   height: 60rpx;
 }
 
+.github-icon {
+  width: 50rpx;
+  height: 50rpx;
+}
+
 .menu-item-text {
   font-weight: normal;
   font-size: 12pt;
@@ -99,10 +95,10 @@
 }
 
 .profile-company {
-  border: 2rpx solid var(--secondary);
+  border: 2rpx solid #719ffa;
   border-radius: 8rpx;
   padding: 4rpx 16rpx;
-  color: var(--secondary);
+  color: #719ffa;
   height: fit-content;
   width: fit-content;
   font-size: 8pt;
@@ -110,12 +106,11 @@
 }
 
 .profile-company-unset {
-  border: 2rpx solid var(--primary);
+  border: 1rpx solid #719ffa;
   border-radius: 8rpx;
   padding: 4rpx 16rpx;
-  color: var(--primary);
+  color: #719ffa;
   font-size: 8pt;
-  font-weight: bold;
   height: fit-content;
   width: fit-content;
 }
@@ -152,4 +147,13 @@
 
 .pay {
   height: 400rpx;
+}
+
+.text-title {
+  color: #364655;
+  font-weight: bold;
+}
+
+.sponsor-list-height {
+  max-height: 13rem;
 }

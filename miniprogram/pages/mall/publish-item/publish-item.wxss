@@ -1,0 +1,33 @@
+.main {
+  padding: 0 40rpx 0 40rpx;
+  height: 100vh;
+}
+
+.bg-gray {
+  background-color: #f9f9f9;
+}
+
+.border-gray {
+  border: 1rpx solid #dfdfdf;
+}
+
+.text-input {
+  color: #bdbdbd;
+}
+
+.text-cancel {
+  color: #3b4054;
+}
+
+.bg-add-picture {
+  background-color: #d9d9d9;
+}
+
+.text-plus {
+  color: #999;
+}
+
+.type {
+  background-color: #efefef;
+  color: #8b8b8b;
+}

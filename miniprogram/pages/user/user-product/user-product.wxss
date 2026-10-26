@@ -1,0 +1,69 @@
+page {
+  background-color: #ffffff;
+  padding-bottom: 100rpx;
+}
+
+.text-xxs {
+  font-size: 20rpx;
+}
+
+.text-custom-purple {
+  color: #abb3cb;
+}
+
+.text-sold {
+  color: #abb3cb;
+}
+
+.skeleton-bg {
+  background-color: #e5e7eb;
+}
+
+.skeleton-animate {
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-animate::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer 2s infinite;
+  content: '';
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.border-purple-light {
+  border: 1px solid #ac9cb7;
+}
+
+.text-button {
+  color: #664d77;
+}
+
+.text-status {
+  color: #abb3cb;
+}
+
+.bg-sell {
+  background-color: #6aa0f4;
+}
+
+.bg-wanted {
+  background-color: #ff8f7b;
+}

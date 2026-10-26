@@ -1,0 +1,60 @@
+<view class="p-4 rounded-xl bg-home-card">
+  <!-- Parking -->
+  <view bindtap="refresh">
+    <view class="flex flex-col gap-4 items-start justify-between">
+      <view class="flex w-full items-center gap-12">
+        <!-- B25 -->
+        <view class="flex flex-col gap-2dot5 items-start">
+          <view class="">
+            <view class="text-xs text-card mb-0dot5">B25 - 剩余车位</view>
+            <view class="flex items-baseline">
+              <view class="parking-count text-2dot5xl font-bold {{hasParkingData && parkingSpace.b25.remaining === 0 ? 'text-card' : ''}}">
+                <rolling-number wx:if="{{parkingInitialized}}" value="{{parkingSpace.b25.remaining}}" />
+              </view>
+              <view class="text-card text-xs ml-0dot5">/{{parkingConfig.b25.maxSpaces}}</view>
+            </view>
+          </view>
+          <!-- Indicators -->
+          <parkingSpaceIndicator isLoading="{{loadingParkingSpace}}" targetProgress="{{parkingSpace.b25.usedPercent}}" indicatorsCount="{{parkingSpace.b25.indicatorCount}}" />
+        </view>
+        <!-- Zhongmeng -->
+        <view class="flex flex-col gap-2dot5 items-start">
+          <view class="">
+            <view class="text-xs text-card mb-0dot5">中盟 - 剩余车位</view>
+            <view class="flex items-baseline">
+              <view class="parking-count text-2dot5xl font-bold {{hasParkingData && parkingSpace.zhongmeng.remaining === 0 ? 'text-card' : ''}}">
+                <rolling-number wx:if="{{parkingInitialized}}" value="{{parkingSpace.zhongmeng.remaining}}" />
+              </view>
+              <view class="text-card text-xs ml-0dot5">/{{parkingConfig.zhongmeng.maxSpaces}}</view>
+            </view>
+          </view>
+          <!-- Indicators -->
+          <parkingSpaceIndicator isLoading="{{loadingParkingSpace}}" targetProgress="{{parkingSpace.zhongmeng.usedPercent}}" indicatorsCount="{{parkingSpace.zhongmeng.indicatorCount}}" />
+        </view>
+      </view>
+      <block wx:if="{{lastParkingFullTimeStr}}">
+        <view class="text-xs text-card">{{lastParkingFullTimeStr}}</view>
+      </block>
+      <block wx:if="{{!lastParkingFullTimeStr}}">
+        <view class="shine w-40 h-4"></view>
+      </block>
+      <block>
+        <view catchtap="toParkingHistory" class="py-1 px-2 bg-link rounded-full text-xs text-link">查看历史趋势 / 热力条</view>
+        <!-- Divider -->
+        <view class="mt-1 border-dashed border-0 border-b-2 border-separator w-full"></view>
+        <!-- Parking Full Tip -->
+        <view class="flex items-center gap-2">
+          <view class="text-card text-xs">车位已满？</view>
+          <view bind:tap="toParkingTip" class="py-1 px-2 bg-link rounded-full flex items-center text-xs text-link">
+            其他停车方案
+          </view>
+          <view bind:tap="toShuttleTip" class="py-1 px-2 bg-link rounded-full flex items-center text-xs text-link">
+            <view>中盟</view>
+            <image class="w-3 h-3 mx-1" src="/images/ic_switch_blue.png"></image>
+            <view>B25 接驳车</view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+</view>

@@ -1,14 +1,25 @@
-<view>
-  <home wx:if="{{currentTab == 'board'}}" />
-  <connection wx:if="{{currentTab == 'connection'}}" />
-  <carpool wx:if="{{currentTab == 'carpool'}}" />
-  <user wx:if="{{currentTab == 'user'}}" />
-</view>
-
-<!-- Bottom tab -->
-<view class="cu-bar bg-white shadow foot tab-container" style="padding-bottom: {{navigationBarHeight > 0 ? (navigationBarHeight + 8) : 20}}rpx;">
-  <view bindtap="onTabSelect" class="{{currentTab === item.id ? 'tab-highlight' : 'tab'}} flex" data-tabid="{{item.id}}" style="width:{{currentTab === item.id ? tabWidth * 1.5 : tabWidth}}px;" wx:for="{{pages}}" wx:key="id">
-    <image class="tab-icon" src="{{currentTab === item.id ? item.iconActive : item.icon}}"></image>
-    <view wx:if="{{currentTab === item.id}}" class="tab-text margin-left-sm">{{item.title}}</view>
+<view class="main-container">
+  <view class="content">
+    <home wx:if="{{currentTab == 'board' && !homeV2Enabled}}" />
+    <homeV2 wx:if="{{currentTab == 'board' && homeV2Enabled}}" />
+    <mall id="mall" wx:if="{{currentTab == 'mall'}}" />
+    <connection wx:if="{{currentTab == 'connection'}}" />
+    <carpool wx:if="{{currentTab == 'carpool'}}" />
+    <user wx:if="{{currentTab == 'user'}}" />
+  </view>
+  <!-- Bottom tab -->
+  <view class="bg-white tab-container" style="padding-bottom: {{navigationBarHeight > 0 ? (navigationBarHeight + 8) : 20}}rpx;">
+    <view class="tab-indicator" style="width: {{tabIndicatorWidth}}px; transform: translateX({{tabIndicatorOffset}}%);" aria-hidden="true" />
+    <view bindtap="onTabSelect" hover-class="none" class="{{currentTab === item.id ? 'tab-highlight' : 'tab'}} flex relative" data-tabid="{{item.id}}" style="width:{{currentTab === item.id ? tabWidth * 1.5 : tabWidth}}px;" wx:for="{{pages}}" wx:key="id">
+      <view class="tab-icon" aria-hidden="true">
+        <image class="tab-icon-image tab-icon-default" src="{{item.icon}}" />
+        <image class="tab-icon-image tab-icon-selected" src="{{item.iconActive}}" />
+      </view>
+      <view class="tab-text margin-left-sm" aria-hidden="{{currentTab !== item.id}}">{{item.title}}</view>
+      <view wx:if="{{item.isBeta && currentTab === item.id}}" class="text-beta absolute top-0 right-2 z-10 border border-solid rounded-full bg-blue-600 text-white px-1">
+        Beta
+      </view>
+    </view>
   </view>
 </view>
+<user-info-modal show="{{showingModal === 'update-userinfo'}}" bind:close="hideModal" />
